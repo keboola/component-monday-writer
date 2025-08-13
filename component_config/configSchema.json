@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "title": "Authentication",
+  "required": ["#api_key"],
+  "properties": {
+    "#api_key": {
+      "type": "string",
+      "format": "password",
+      "title": "API Token",
+      "description": "Your Monday.com API token."
+    }
+  }
+}
