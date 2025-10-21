@@ -6,20 +6,20 @@
     "board_id": {
       "type": "string",
       "title": "Board ID",
-      "description": "The Monday.com board to write into (e.g. 9772074792).",
+      "description": "Monday.com board to write into (e.g. 9772074792).",
       "propertyOrder": 100
     },
     "group_id": {
       "type": "string",
       "title": "Group ID",
-      "description": "Target group on the board. Leave empty to use the default 'topics' group.",
+      "description": "Target group on the board. Leave empty to use the board default.",
       "default": "topics",
       "propertyOrder": 110
     },
     "batch_size": {
       "type": "integer",
       "title": "Batch Size",
-      "description": "Process records in chunks of this size.",
+      "description": "Process rows in chunks.",
       "minimum": 1,
       "maximum": 500,
       "default": 50,
@@ -29,22 +29,23 @@
     "unique_key": {
       "type": "object",
       "title": "Upsert Identity",
-      "description": "Defines how to match existing items for update. For the MVP, you can use item name by setting monday_column_id to __item_name__.",
+      "description": "How to match existing items for update.",
       "required": ["source_column", "monday_column_id"],
       "properties": {
         "source_column": {
           "type": "string",
           "title": "Unique Source Column",
-          "description": "CSV column name that contains the business key (e.g. Request Number)."
+          "description": "CSV column containing the business key.",
+          "options": { "inputAttributes": { "placeholder": "e.g. RequestId" } }
         },
         "monday_column_id": {
           "type": "string",
           "title": "Unique Monday Column ID",
-          "description": "Use '__item_name__' to match by item name. Otherwise, enter the real Monday column_id of a text column that stores the key.",
+          "description": "Use '__item_name__' to match by item name, or enter a text column_id.",
           "default": "__item_name__",
-          "enum": ["__item_name__"],
+          "pattern": "^(__item_name__|[A-Za-z0-9_]+)$",
           "options": {
-            "enum_titles": ["Item name (__item_name__)"]
+            "inputAttributes": { "placeholder": "__item_name__ or e.g. text_abcd1234" }
           }
         }
       },
@@ -54,7 +55,8 @@
     "field_mappings": {
       "type": "array",
       "title": "Column Mappings",
-      "description": "Map CSV columns to Monday column IDs. You can also map the key column to '__item_name__' to set the item name.",
+      "description": "Map CSV columns to Monday column IDs. Use '__item_name__' to set the item name.",
+      "minItems": 0,
       "items": {
         "type": "object",
         "required": ["source_column", "monday_column_id"],
@@ -62,22 +64,21 @@
           "source_column": {
             "type": "string",
             "title": "Source Column",
-            "description": "CSV column name (e.g. Request Number, Brand, Due date)."
+            "description": "CSV column name to read from.",
+            "options": { "inputAttributes": { "placeholder": "e.g. Brand" } }
           },
           "monday_column_id": {
             "type": "string",
             "title": "Monday Column ID",
-            "description": "The Monday column_id to write to (e.g. brand, request_date). Use '__item_name__' to set the item name.",
-            "default": "",
-            "enum": ["__item_name__"],
+            "description": "Target column_id (free text). Use '__item_name__' to set the item name.",
+            "pattern": "^(__item_name__|[A-Za-z0-9_]+)$",
             "options": {
-              "enum_titles": ["Item name (__item_name__)"],
+              "inputAttributes": { "placeholder": "e.g. color_xxx, text_xxx, date_xxx, __item_name__" },
               "grid_columns": 2
             }
           }
         }
       },
-      "minItems": 1,
       "propertyOrder": 300
     }
   }
