@@ -39,6 +39,11 @@ class Component(ComponentBase):
 
     @sync_action("return_monday_table_types")
     def return_column_data(self):
+        if not self.environment_variables.token:
+            raise UserException(
+                "Storage API Token is missing. Please enable 'Forward Token' in the Keboola Component Settings."
+            )
+
         if not self.configuration.tables_input_mapping or len(self.configuration.tables_input_mapping) != 1:
             raise UserException(
                 "Exactly one input table must be mapped in the configuration. "

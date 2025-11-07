@@ -12,6 +12,7 @@
           "type": "string",
           "title": "Board ID",
           "description": "Monday.com board to write into (e.g. 9772074792).",
+          "format": "text",
           "propertyOrder": 100
         },
         "group_id": {
@@ -19,6 +20,7 @@
           "title": "Group ID",
           "description": "Target group on the board. Leave empty to use the board default.",
           "default": "topics",
+          "format": "text",
           "propertyOrder": 110
         },
         "batch_size": {
@@ -55,15 +57,19 @@
           "title": "Unique Monday Column",
           "description": "Use '__item_name__' to match by item name, or select a column from Monday.com.",
           "format": "select",
+          "enum": [],
           "default": "__item_name__",
           "options": {
             "allowCustom": true,
             "dependencies": {
               "sync_options.board_id": {
-                "syncAction": "fetch_monday_columns"
+                "syncAction": "fetch_monday_columns",
+                "autoload": ["parameters.sync_options.board_id"]
               }
             },
-            "inputAttributes": { "placeholder": "__item_name__ or choose from dropdown" },
+            "inputAttributes": {
+              "placeholder": "__item_name__ or choose from dropdown"
+            },
             "grid_columns": 2
           },
           "propertyOrder": 2
@@ -87,7 +93,9 @@
             "type": "string",
             "title": "Source Column",
             "description": "CSV column name to read from.",
-            "options": { "inputAttributes": { "placeholder": "e.g. Brand" } },
+            "options": {
+              "inputAttributes": { "placeholder": "e.g. Brand" }
+            },
             "propertyOrder": 1
           },
           "monday_column_id": {
@@ -95,14 +103,18 @@
             "title": "Monday Column",
             "description": "Select a Monday.com column for this source field.",
             "format": "select",
+            "enum": [],
             "options": {
               "allowCustom": true,
               "dependencies": {
                 "sync_options.board_id": {
-                  "syncAction": "fetch_monday_columns"
+                  "syncAction": "fetch_monday_columns",
+                  "autoload": ["parameters.sync_options.board_id"]
                 }
               },
-              "inputAttributes": { "placeholder": "e.g. Status, Due Date, Owner" }
+              "inputAttributes": {
+                "placeholder": "e.g. Status, Due Date, Owner"
+              }
             },
             "propertyOrder": 2
           }
