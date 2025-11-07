@@ -52,12 +52,18 @@
         },
         "monday_column_id": {
           "type": "string",
-          "title": "Unique Monday Column ID",
-          "description": "Use '__item_name__' to match by item name, or enter a text column_id.",
+          "title": "Unique Monday Column",
+          "description": "Use '__item_name__' to match by item name, or select a column from Monday.com.",
+          "format": "select",
           "default": "__item_name__",
-          "pattern": "^(__item_name__|[A-Za-z0-9_]+)$",
           "options": {
-            "inputAttributes": { "placeholder": "__item_name__ or e.g. text_abcd1234" },
+            "allowCustom": true,
+            "dependencies": {
+              "sync_options.board_id": {
+                "syncAction": "fetch_monday_columns"
+              }
+            },
+            "inputAttributes": { "placeholder": "__item_name__ or choose from dropdown" },
             "grid_columns": 2
           },
           "propertyOrder": 2
@@ -69,7 +75,7 @@
     "field_mappings": {
       "type": "array",
       "title": "Column Mappings",
-      "description": "Map CSV columns to Monday column IDs. Use '__item_name__' to set the item name.",
+      "description": "Map CSV columns to Monday.com columns. Use '__item_name__' to set the item name.",
       "minItems": 0,
       "format": "table",
       "items": {
@@ -86,17 +92,38 @@
           },
           "monday_column_id": {
             "type": "string",
-            "title": "Monday Column ID",
-            "description": "Target column_id (free text). Use '__item_name__' to set the item name.",
-            "pattern": "^(__item_name__|[A-Za-z0-9_]+)$",
+            "title": "Monday Column",
+            "description": "Select a Monday.com column for this source field.",
+            "format": "select",
             "options": {
-              "inputAttributes": { "placeholder": "e.g. color_xxx, text_xxx, date_xxx, __item_name__" }
+              "allowCustom": true,
+              "dependencies": {
+                "sync_options.board_id": {
+                  "syncAction": "fetch_monday_columns"
+                }
+              },
+              "inputAttributes": { "placeholder": "e.g. Status, Due Date, Owner" }
             },
             "propertyOrder": 2
           }
         }
       },
       "propertyOrder": 300
+    },
+
+    "load_columns_button": {
+      "type": "button",
+      "format": "sync-action",
+      "title": "Load Source Columns",
+      "description": "Fetch columns from the selected input table and prefill Source Column options.",
+      "options": {
+        "async": {
+          "cache": false,
+          "label": "LOAD SOURCE COLUMNS",
+          "action": "return_monday_table_types"
+        }
+      },
+      "propertyOrder": 400
     }
   }
 }

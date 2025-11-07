@@ -22,7 +22,7 @@ class FieldMapping(BaseModel):
     One mapping row: CSV/Source column -> Monday column_id.
     """
     source_column: str = Field(..., title="Source Column")
-    monday_column_id: str = Field(..., title="Monday Column ID")
+    monday_column_id: Optional[str] = Field("", title="Monday Column ID")
 
     @model_validator(mode="after")
     def _validate(self) -> "FieldMapping":
@@ -30,8 +30,8 @@ class FieldMapping(BaseModel):
         self.monday_column_id = self.monday_column_id.strip()
         if not self.source_column:
             raise ValueError("source_column cannot be empty.")
-        if not self.monday_column_id:
-            raise ValueError("monday_column_id cannot be empty.")
+        if self.monday_column_id is None:
+            self.monday_column_id = ""
         return self
 
 
