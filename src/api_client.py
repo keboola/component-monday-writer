@@ -65,7 +65,8 @@ class ApiClient:
                 for cv in getattr(it, "column_values", []) or []:
                     if getattr(cv, "id", None) == self.unique_col:
                         unique_val = (
-                                getattr(cv, "text", None) or getattr(cv, "value", None) or getattr(cv, "raw_value", None)
+                                getattr(cv, "text", None) or getattr(cv, "value", None)
+                                or getattr(cv, "raw_value", None)
                         )
                         break
                 unique_val = (unique_val or "").strip()
@@ -205,7 +206,7 @@ class ApiClient:
             total += processed
             logging.info(f"[Monday.com/Writer] Batch {i}: processed {processed} rows (total {total}).")
 
-        logging.info(f"[Monday.com/Writer] ═══ SYNC SUMMARY ═══")
+        logging.info("[Monday.com/Writer] ═══ SYNC SUMMARY ═══")
         logging.info(f"[Monday.com/Writer] Total rows processed: {total}")
         logging.info(f"[Monday.com/Writer] ✓ Successfully synced: {self.success_count}")
         logging.info(f"[Monday.com/Writer] ✗ Errors encountered: {self.error_count}")
