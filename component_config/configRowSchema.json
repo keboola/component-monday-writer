@@ -1,13 +1,12 @@
 {
   "type": "object",
   "title": "Row Configuration",
-  "required": ["sync_options", "unique_key", "field_mappings"],
+  "required": ["sync_options"],
   "properties": {
     "sync_options": {
       "type": "object",
       "title": "Sync Options",
-      "required": ["board_id"],
-      "propertyOrder": 100,
+      "required": [],
       "properties": {
         "board_id": {
           "type": "string",
@@ -17,7 +16,7 @@
           "propertyOrder": 1,
           "options": {
             "async": {
-              "label": "Re-load Boards",
+              "label": "LOAD BOARDS",
               "action": "list_boards",
               "autoload": []
             }
@@ -32,7 +31,7 @@
           "propertyOrder": 2,
           "options": {
             "async": {
-              "label": "Re-load Groups",
+              "label": "LOAD GROUPS",
               "action": "list_groups",
               "autoload": ["parameters.sync_options.board_id"]
             }
@@ -48,15 +47,15 @@
           "default": 50,
           "propertyOrder": 3
         }
-      }
+      },
+      "propertyOrder": 100
     },
 
     "unique_key": {
       "type": "object",
       "title": "Upsert Identity",
       "description": "How to match existing items for update.",
-      "required": ["source_column", "monday_column_id"],
-      "propertyOrder": 200,
+      "required": [],
       "properties": {
         "source_column": {
           "type": "string",
@@ -78,16 +77,19 @@
           "options": {
             "allowCustom": true,
             "async": {
-              "label": "Re-load Columns",
+              "label": "LOAD COLUMNS",
               "action": "fetch_monday_columns",
               "autoload": ["parameters.sync_options.board_id"]
             },
-            "inputAttributes": { "placeholder": "__item_name__ or choose from dropdown" },
+            "inputAttributes": {
+              "placeholder": "__item_name__ or choose from dropdown"
+            },
             "grid_columns": 2
           },
           "propertyOrder": 2
         }
-      }
+      },
+      "propertyOrder": 200
     },
 
     "field_mappings": {
@@ -96,17 +98,19 @@
       "description": "Map CSV columns to Monday.com columns. Use '__item_name__' to set the item name.",
       "minItems": 0,
       "format": "table",
-      "propertyOrder": 300,
+      "required": [],
       "items": {
         "type": "object",
         "title": "Field Mapping",
-        "required": ["source_column", "monday_column_id"],
+        "required": [],
         "properties": {
           "source_column": {
             "type": "string",
             "title": "Source Column",
             "description": "CSV column name to read from.",
-            "options": { "inputAttributes": { "placeholder": "e.g. Brand" } },
+            "options": {
+              "inputAttributes": { "placeholder": "e.g. Brand" }
+            },
             "propertyOrder": 1
           },
           "monday_column_id": {
@@ -118,16 +122,19 @@
             "options": {
               "allowCustom": true,
               "async": {
-                "label": "Re-load Columns",
+                "label": "LOAD COLUMNS",
                 "action": "fetch_monday_columns",
                 "autoload": ["parameters.sync_options.board_id"]
               },
-              "inputAttributes": { "placeholder": "e.g. Status, Due Date, Owner" }
+              "inputAttributes": {
+                "placeholder": "e.g. Status, Due Date, Owner"
+              }
             },
             "propertyOrder": 2
           }
         }
-      }
+      },
+      "propertyOrder": 300
     },
 
     "load_columns_button": {

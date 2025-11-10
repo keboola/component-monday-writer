@@ -67,27 +67,33 @@ class Component(ComponentBase):
 
     @sync_action("list_boards")
     def list_boards(self):
-        cfg = Configuration(**{"parameters": self.configuration.parameters})
-        client = ApiClient(cfg, self).client
-        res = client.boards.fetch_boards()
-        boards = getattr(res.data, "boards", []) or []
+        """Fetch available Monday.com boards for dropdown."""
+        api_key = self.configuration.parameters.get("authorization", {}).get("#api_key")
+        if not api_key:
+            raise UserException("Please provide an API token first.")
 
-        return [SelectElement(value=str(b.id), label=b.name) for b in boards]
+        client = ApiClient(Configuration(**{"parameters": self.configuration.parameters}), self)
+        boards = client.client.boards.fetch_boards().data.boards
+
+        return [SelectElement(b.id, b.name) for b in boards]
 
     @sync_action("list_groups")
     def list_groups(self):
-        board_id = (self.configuration.parameters.get("sync_options", {}) or {}).get("board_id")
-        if not board_id:
-            raise UserException("Select a board first to load groups.")
-        cfg = Configuration(**{"parameters": self.configuration.parameters})
-        client = ApiClient(cfg, self).client
-        res = client.boards.fetch_boards(ids=[str(board_id)])
-        boards = getattr(res.data, "boards", []) or []
-        if not boards:
-            return []
-        groups = getattr(boards[0], "groups", []) or []
+        """Fetch groups for the selected Monday.com board."""
+        board_id = (
+            self.configuration.parameters.get("sync_options", {}).get("board_id")
+        )
+        api_key = self.configuration.parameters.get("authorization", {}).get("#api_key")
 
-        return [SelectElement(value=g.id, label=g.title) for g in groups]
+        if not api_key:
+            raise UserException("Please provide an API token first.")
+        if not board_id:
+            raise UserException("Please select a board before loading groups.")
+
+        client = ApiClient(Configuration(**{"parameters": self.configuration.parameters}), self)
+        result = client.client.boards.fetch_groups_by_board_id(board_id=board_id)
+
+        return [SelectElement(g.id, g.title) for g in result.data.boards[0].groups]
 
     @sync_action("fetch_monday_columns")
     def fetch_monday_columns(self):
