@@ -108,7 +108,6 @@ class Component(ComponentBase):
         """List all groups in the selected Monday.com board."""
         params = self.configuration.parameters.get("sync_options", {})
         board_id = params.get("board_id")
-
         if not board_id:
             raise UserException("Please select a board first to load groups.")
 
@@ -121,6 +120,7 @@ class Component(ComponentBase):
             return []
 
         groups = getattr(boards[0], "groups", []) or []
+
         return [SelectElement(g.id, g.title) for g in groups]
 
 """

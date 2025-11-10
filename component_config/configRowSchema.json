@@ -8,35 +8,48 @@
       "title": "Sync Options",
       "required": ["board_id"],
       "properties": {
-        "board_id": {
-          "type": "string",
-          "title": "Board",
-          "format": "select",
-          "description": "The Monday.com board to write into.",
+        "load_boards_button": {
+          "type": "button",
+          "title": "Load Boards",
+          "format": "sync-action",
           "propertyOrder": 1,
           "options": {
             "async": {
               "label": "LOAD BOARDS",
               "action": "list_boards",
-              "autoload": []
+              "cache": false
             }
-          },
-          "enum": []
+          }
+        },
+        "board_id": {
+          "type": "string",
+          "title": "Board",
+          "format": "select",
+          "enum": [],
+          "description": "Select a Monday.com board to write into.",
+          "propertyOrder": 2
+        },
+        "load_groups_button": {
+          "type": "button",
+          "title": "Load Groups",
+          "format": "sync-action",
+          "propertyOrder": 3,
+          "options": {
+            "async": {
+              "label": "LOAD GROUPS",
+              "action": "list_groups",
+              "autoload": ["parameters.sync_options.board_id"],
+              "cache": false
+            }
+          }
         },
         "group_id": {
           "type": "string",
           "title": "Group",
           "format": "select",
-          "description": "The target group within the selected board.",
-          "propertyOrder": 2,
-          "options": {
-            "async": {
-              "label": "LOAD GROUPS",
-              "action": "list_groups",
-              "autoload": ["parameters.sync_options.board_id"]
-            }
-          },
-          "enum": []
+          "enum": [],
+          "description": "Select a group within the selected board.",
+          "propertyOrder": 4
         },
         "batch_size": {
           "type": "integer",
@@ -45,10 +58,9 @@
           "minimum": 1,
           "maximum": 500,
           "default": 50,
-          "propertyOrder": 3
+          "propertyOrder": 5
         }
-      },
-      "propertyOrder": 100
+      }
     },
 
     "unique_key": {
