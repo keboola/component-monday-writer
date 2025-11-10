@@ -6,6 +6,7 @@ from datetime import datetime, UTC
 
 from keboola.component.base import ComponentBase, sync_action
 from keboola.component.exceptions import UserException
+from keboola.component.sync_actions import SelectElement
 
 from configuration import Configuration
 from api_client import ApiClient
@@ -90,66 +91,37 @@ class Component(ComponentBase):
 
         return {"type": "data", "data": options}
 
-    @sync_action("fetch_boards_and_groups")
-    def fetch_boards_and_groups(self):
-        """
-        Fetch all boards and their groups from Monday.com.
-        Returns dropdown data for 'board_id' and 'group_id' fields.
-        """
-        from api_client import ApiClient
-        from configuration import Configuration
+    @sync_action("list_boards")
+    def list_boards(self):
+        """List all accessible Monday.com boards for dropdown."""
+        config = Configuration(**{"parameters": self.configuration.parameters})
+        client = ApiClient(config, self).client
 
-        api_client = ApiClient(Configuration(**{"parameters": self.configuration.parameters}), self)
-        monday_client = api_client.client
+        result = client.boards.fetch_boards()
+        boards = getattr(result.data, "boards", []) or []
 
-        all_boards = []
-        cursor = None
-        page = 1
+        return [SelectElement(str(b.id), b.name) for b in boards]
 
-        while True:
-            logging.info(f"[Monday.com/Writer] Fetching boards (page {page})...")
-            result = monday_client.boards.fetch_boards(cursor=cursor)
-            boards_data = result.data.boards
 
-            if not boards_data:
-                break
+    @sync_action("list_groups")
+    def list_groups(self):
+        """List all groups in the selected Monday.com board."""
+        params = self.configuration.parameters.get("sync_options", {})
+        board_id = params.get("board_id")
 
-            for board in boards_data:
-                all_boards.append({
-                    "id": str(board.id),
-                    "name": board.name,
-                    "groups": [{"id": g.id, "title": g.title} for g in board.groups or []]
-                })
+        if not board_id:
+            raise UserException("Please select a board first to load groups.")
 
-            cursor = result.data.page_info.end_cursor if hasattr(result.data, "page_info") else None
-            if not cursor or not result.data.page_info.has_next_page:
-                break
+        config = Configuration(**{"parameters": self.configuration.parameters})
+        client = ApiClient(config, self).client
 
-            page += 1
+        result = client.boards.fetch_boards(ids=[str(board_id)])
+        boards = getattr(result.data, "boards", []) or []
+        if not boards:
+            return []
 
-        board_options = [
-            {
-                "label": f"{board['name']} ({board['id']})",
-                "value": board["id"]
-            }
-            for board in all_boards
-        ]
-
-        groups_by_board = {
-            board["id"]: [
-                {"label": f"{g['title']} ({g['id']})", "value": g["id"]}
-                for g in board["groups"]
-            ]
-            for board in all_boards
-        }
-
-        return {
-            "type": "data",
-            "data": {
-                "boards": board_options,
-                "groups_by_board": groups_by_board
-            }
-        }
+        groups = getattr(boards[0], "groups", []) or []
+        return [SelectElement(g.id, g.title) for g in groups]
 
 """
 Main entrypoint

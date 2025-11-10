@@ -11,52 +11,32 @@
         "board_id": {
           "type": "string",
           "title": "Board",
-          "description": "Select a Monday.com board.",
           "format": "select",
-          "enum": [],
+          "description": "The Monday.com board to write into.",
+          "propertyOrder": 1,
           "options": {
-            "allowCustom": true,
             "async": {
-              "label": "Load Boards",
-              "action": "fetch_boards_and_groups",
-              "cache": false
-            },
-            "inputAttributes": {
-              "placeholder": "Click 'Load Boards' to fetch available boards"
+              "label": "LOAD BOARDS",
+              "action": "list_boards",
+              "autoload": []
             }
           },
-          "propertyOrder": 100
+          "enum": []
         },
         "group_id": {
           "type": "string",
           "title": "Group",
-          "description": "Select a group from the chosen board.",
           "format": "select",
-          "enum": [],
+          "description": "The target group within the selected board.",
+          "propertyOrder": 2,
           "options": {
-            "allowCustom": true,
-            "dependencies": {
-              "sync_options.board_id": {
-                "syncAction": "fetch_boards_and_groups",
-                "mapResponse": {
-                  "source": "data.groups_by_board",
-                  "key": "parameters.sync_options.board_id"
-                }
-              }
-            },
-            "inputAttributes": {
-              "placeholder": "Select a board first"
+            "async": {
+              "label": "LOAD GROUPS",
+              "action": "list_groups",
+              "autoload": ["parameters.sync_options.board_id"]
             }
           },
-          "optionsDependencies": ["sync_options.board_id"],
-          "propertyOrder": 110,
-          "conditions": {
-            "show": {
-              "sync_options.board_id": {
-                "notEmpty": true
-              }
-            }
-          }
+          "enum": []
         },
         "batch_size": {
           "type": "integer",
@@ -65,7 +45,7 @@
           "minimum": 1,
           "maximum": 500,
           "default": 50,
-          "propertyOrder": 120
+          "propertyOrder": 3
         }
       },
       "propertyOrder": 100
