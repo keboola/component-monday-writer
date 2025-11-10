@@ -90,7 +90,66 @@ class Component(ComponentBase):
 
         return {"type": "data", "data": options}
 
+    @sync_action("fetch_boards_and_groups")
+    def fetch_boards_and_groups(self):
+        """
+        Fetch all boards and their groups from Monday.com.
+        Returns dropdown data for 'board_id' and 'group_id' fields.
+        """
+        from api_client import ApiClient
+        from configuration import Configuration
 
+        api_client = ApiClient(Configuration(**{"parameters": self.configuration.parameters}), self)
+        monday_client = api_client.client
+
+        all_boards = []
+        cursor = None
+        page = 1
+
+        while True:
+            logging.info(f"[Monday.com/Writer] Fetching boards (page {page})...")
+            result = monday_client.boards.fetch_boards(cursor=cursor)
+            boards_data = result.data.boards
+
+            if not boards_data:
+                break
+
+            for board in boards_data:
+                all_boards.append({
+                    "id": str(board.id),
+                    "name": board.name,
+                    "groups": [{"id": g.id, "title": g.title} for g in board.groups or []]
+                })
+
+            cursor = result.data.page_info.end_cursor if hasattr(result.data, "page_info") else None
+            if not cursor or not result.data.page_info.has_next_page:
+                break
+
+            page += 1
+
+        board_options = [
+            {
+                "label": f"{board['name']} ({board['id']})",
+                "value": board["id"]
+            }
+            for board in all_boards
+        ]
+
+        groups_by_board = {
+            board["id"]: [
+                {"label": f"{g['title']} ({g['id']})", "value": g["id"]}
+                for g in board["groups"]
+            ]
+            for board in all_boards
+        }
+
+        return {
+            "type": "data",
+            "data": {
+                "boards": board_options,
+                "groups_by_board": groups_by_board
+            }
+        }
 
 """
 Main entrypoint

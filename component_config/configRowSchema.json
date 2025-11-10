@@ -10,23 +10,58 @@
       "properties": {
         "board_id": {
           "type": "string",
-          "title": "Board ID",
-          "description": "Monday.com board to write into (e.g. 9772074792).",
-          "format": "text",
+          "title": "Board",
+          "description": "Select a Monday.com board.",
+          "format": "select",
+          "enum": [],
+          "options": {
+            "allowCustom": true,
+            "async": {
+              "label": "Load Boards",
+              "action": "fetch_boards_and_groups",
+              "cache": false
+            },
+            "inputAttributes": {
+              "placeholder": "Click 'Load Boards' to fetch available boards"
+            }
+          },
           "propertyOrder": 100
         },
         "group_id": {
           "type": "string",
-          "title": "Group ID",
-          "description": "Target group on the board. Leave empty to use the board default.",
-          "default": "topics",
-          "format": "text",
-          "propertyOrder": 110
+          "title": "Group",
+          "description": "Select a group from the chosen board.",
+          "format": "select",
+          "enum": [],
+          "options": {
+            "allowCustom": true,
+            "dependencies": {
+              "sync_options.board_id": {
+                "syncAction": "fetch_boards_and_groups",
+                "mapResponse": {
+                  "source": "data.groups_by_board",
+                  "key": "parameters.sync_options.board_id"
+                }
+              }
+            },
+            "inputAttributes": {
+              "placeholder": "Select a board first"
+            }
+          },
+          "optionsDependencies": ["sync_options.board_id"],
+          "propertyOrder": 110,
+          "conditions": {
+            "show": {
+              "sync_options.board_id": {
+                "notEmpty": true
+              }
+            }
+          }
         },
         "batch_size": {
           "type": "integer",
           "title": "Batch Size",
-          "description": "Process rows in chunks.",
+          "description": "Process Monday.com board data in chunks (default 50, max 500).",
           "minimum": 1,
           "maximum": 500,
           "default": 50,
