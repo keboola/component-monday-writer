@@ -7,49 +7,37 @@
       "type": "object",
       "title": "Sync Options",
       "required": ["board_id"],
+      "propertyOrder": 100,
       "properties": {
-        "load_boards_button": {
-          "type": "button",
-          "title": "Load Boards",
-          "format": "sync-action",
-          "propertyOrder": 1,
-          "options": {
-            "async": {
-              "label": "LOAD BOARDS",
-              "action": "list_boards",
-              "cache": false
-            }
-          }
-        },
         "board_id": {
           "type": "string",
           "title": "Board",
           "format": "select",
-          "enum": [],
           "description": "Select a Monday.com board to write into.",
-          "propertyOrder": 2
-        },
-        "load_groups_button": {
-          "type": "button",
-          "title": "Load Groups",
-          "format": "sync-action",
-          "propertyOrder": 3,
+          "propertyOrder": 1,
           "options": {
             "async": {
-              "label": "LOAD GROUPS",
-              "action": "list_groups",
-              "autoload": ["parameters.sync_options.board_id"],
-              "cache": false
+              "label": "Re-load Boards",
+              "action": "list_boards",
+              "autoload": []
             }
-          }
+          },
+          "enum": []
         },
         "group_id": {
           "type": "string",
           "title": "Group",
           "format": "select",
-          "enum": [],
           "description": "Select a group within the selected board.",
-          "propertyOrder": 4
+          "propertyOrder": 2,
+          "options": {
+            "async": {
+              "label": "Re-load Groups",
+              "action": "list_groups",
+              "autoload": ["parameters.sync_options.board_id"]
+            }
+          },
+          "enum": []
         },
         "batch_size": {
           "type": "integer",
@@ -58,7 +46,7 @@
           "minimum": 1,
           "maximum": 500,
           "default": 50,
-          "propertyOrder": 5
+          "propertyOrder": 3
         }
       }
     },
@@ -68,6 +56,7 @@
       "title": "Upsert Identity",
       "description": "How to match existing items for update.",
       "required": ["source_column", "monday_column_id"],
+      "propertyOrder": 200,
       "properties": {
         "source_column": {
           "type": "string",
@@ -88,21 +77,17 @@
           "default": "__item_name__",
           "options": {
             "allowCustom": true,
-            "dependencies": {
-              "sync_options.board_id": {
-                "syncAction": "fetch_monday_columns",
-                "autoload": ["parameters.sync_options.board_id"]
-              }
+            "async": {
+              "label": "Re-load Columns",
+              "action": "fetch_monday_columns",
+              "autoload": ["parameters.sync_options.board_id"]
             },
-            "inputAttributes": {
-              "placeholder": "__item_name__ or choose from dropdown"
-            },
+            "inputAttributes": { "placeholder": "__item_name__ or choose from dropdown" },
             "grid_columns": 2
           },
           "propertyOrder": 2
         }
-      },
-      "propertyOrder": 200
+      }
     },
 
     "field_mappings": {
@@ -111,6 +96,7 @@
       "description": "Map CSV columns to Monday.com columns. Use '__item_name__' to set the item name.",
       "minItems": 0,
       "format": "table",
+      "propertyOrder": 300,
       "items": {
         "type": "object",
         "title": "Field Mapping",
@@ -120,9 +106,7 @@
             "type": "string",
             "title": "Source Column",
             "description": "CSV column name to read from.",
-            "options": {
-              "inputAttributes": { "placeholder": "e.g. Brand" }
-            },
+            "options": { "inputAttributes": { "placeholder": "e.g. Brand" } },
             "propertyOrder": 1
           },
           "monday_column_id": {
@@ -133,21 +117,17 @@
             "enum": [],
             "options": {
               "allowCustom": true,
-              "dependencies": {
-                "sync_options.board_id": {
-                  "syncAction": "fetch_monday_columns",
-                  "autoload": ["parameters.sync_options.board_id"]
-                }
+              "async": {
+                "label": "Re-load Columns",
+                "action": "fetch_monday_columns",
+                "autoload": ["parameters.sync_options.board_id"]
               },
-              "inputAttributes": {
-                "placeholder": "e.g. Status, Due Date, Owner"
-              }
+              "inputAttributes": { "placeholder": "e.g. Status, Due Date, Owner" }
             },
             "propertyOrder": 2
           }
         }
-      },
-      "propertyOrder": 300
+      }
     },
 
     "load_columns_button": {

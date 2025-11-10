@@ -65,63 +65,43 @@ class Component(ComponentBase):
             }
         }
 
-    @sync_action("fetch_monday_columns")
-    def fetch_monday_columns(self):
-        """
-        Fetch available columns for the given Monday.com board.
-        Returned as [{"label": "Column Name", "value": "column_id"}]
-        """
-        board_id = (
-            self.configuration.parameters.get("sync_options", {}).get("board_id")
-            or None
-        )
-
-        if not board_id:
-            raise UserException("Please Specify Board ID before fetching Monday.com columns")
-
-        api_client = ApiClient(Configuration(**{"parameters": self.configuration.parameters}), self)
-        result = api_client.client.boards.fetch_columns_by_board_id(board_id=board_id)
-
-        options = [
-            {"label": c.title, "value": c.id}
-            for c in result.data.boards[0].columns
-        ]
-
-        options.insert(0, {"label": "Unique field", "value": "__item_name__"})
-
-        return {"type": "data", "data": options}
-
     @sync_action("list_boards")
     def list_boards(self):
-        """List all accessible Monday.com boards for dropdown."""
-        config = Configuration(**{"parameters": self.configuration.parameters})
-        client = ApiClient(config, self).client
+        cfg = Configuration(**{"parameters": self.configuration.parameters})
+        client = ApiClient(cfg, self).client
+        res = client.boards.fetch_boards()
+        boards = getattr(res.data, "boards", []) or []
 
-        result = client.boards.fetch_boards()
-        boards = getattr(result.data, "boards", []) or []
-
-        return [SelectElement(str(b.id), b.name) for b in boards]
-
+        return [SelectElement(value=str(b.id), label=b.name) for b in boards]
 
     @sync_action("list_groups")
     def list_groups(self):
-        """List all groups in the selected Monday.com board."""
-        params = self.configuration.parameters.get("sync_options", {})
-        board_id = params.get("board_id")
+        board_id = (self.configuration.parameters.get("sync_options", {}) or {}).get("board_id")
         if not board_id:
-            raise UserException("Please select a board first to load groups.")
-
-        config = Configuration(**{"parameters": self.configuration.parameters})
-        client = ApiClient(config, self).client
-
-        result = client.boards.fetch_boards(ids=[str(board_id)])
-        boards = getattr(result.data, "boards", []) or []
+            raise UserException("Select a board first to load groups.")
+        cfg = Configuration(**{"parameters": self.configuration.parameters})
+        client = ApiClient(cfg, self).client
+        res = client.boards.fetch_boards(ids=[str(board_id)])
+        boards = getattr(res.data, "boards", []) or []
         if not boards:
             return []
-
         groups = getattr(boards[0], "groups", []) or []
 
-        return [SelectElement(g.id, g.title) for g in groups]
+        return [SelectElement(value=g.id, label=g.title) for g in groups]
+
+    @sync_action("fetch_monday_columns")
+    def fetch_monday_columns(self):
+        board_id = (self.configuration.parameters.get("sync_options", {}) or {}).get("board_id")
+        if not board_id:
+            raise UserException("Select a board first to load Monday columns.")
+        cfg = Configuration(**{"parameters": self.configuration.parameters})
+        client = ApiClient(cfg, self).client
+        res = client.boards.fetch_columns_by_board_id(board_id=str(board_id))
+        cols = getattr(res, "data", None)
+        options = [SelectElement(value=c.id, label=f"{c.title} ({c.id})") for c in cols.boards[0].columns]
+        options.insert(0, SelectElement(value="__item_name__", label="__item_name__ (Item Name)"))
+
+        return options
 
 """
 Main entrypoint
