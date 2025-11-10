@@ -6,6 +6,7 @@ from keboola.component.exceptions import UserException
 class Authorization(BaseModel):
     """Monday.com authorization."""
     api_key: str = Field(..., alias="#api_key", title="API Token")
+
     model_config = {"populate_by_name": True}
 
     @model_validator(mode="after")
@@ -23,7 +24,7 @@ class FieldMapping(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "FieldMapping":
-        self.source_column = self.source_column.strip()
+        self.source_column = (self.source_column or "").strip()
         self.monday_column_id = (self.monday_column_id or "").strip()
         if not self.source_column:
             raise ValueError("source_column cannot be empty.")
@@ -37,8 +38,8 @@ class UniqueKey(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "UniqueKey":
-        self.source_column = self.source_column.strip()
-        self.monday_column_id = self.monday_column_id.strip()
+        self.source_column = (self.source_column or "").strip()
+        self.monday_column_id = (self.monday_column_id or "").strip()
         if not self.source_column:
             raise ValueError("unique_key.source_column cannot be empty.")
         if not self.monday_column_id:
@@ -47,7 +48,7 @@ class UniqueKey(BaseModel):
 
 
 class SyncOptions(BaseModel):
-    """Runtime options."""
+    """Runtime options for Monday sync."""
     board_id: Optional[Union[str, int]] = Field(None, title="Board ID")
     group_id: Optional[str] = Field("topics", title="Group ID")
     batch_size: int = Field(50, ge=1, le=500, title="Batch Size")
@@ -68,7 +69,7 @@ class SyncOptions(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "SyncOptions":
-        # Skip strict validation when config incomplete (UI phase)
+        # Skip strict validation when incomplete (UI phase)
         if not self.board_id:
             return self
         if not str(self.board_id).strip():
@@ -82,19 +83,25 @@ class Parameters(BaseModel):
     sync_options: Optional[SyncOptions] = None
     unique_key: Optional[UniqueKey] = None
     field_mappings: Optional[List[FieldMapping]] = None
+    action: Optional[str] = Field(default="run")
 
     @model_validator(mode="after")
     def _validate(self) -> "Parameters":
-        # Skip if running in partial config (UI autoload or sync actions)
+        # Skip validation for UI/sync actions
+        if self.action and self.action != "run":
+            return self
+
+        # Skip if config incomplete (UI autoload, test connection, etc.)
         if not all([self.authorization, self.sync_options, self.unique_key, self.field_mappings]):
             return self
 
-        # Full validation only for run mode
+        # Full runtime validation
         if not self.field_mappings:
             raise ValueError("field_mappings must contain at least one mapping.")
 
         srcs = [m.source_column for m in self.field_mappings]
         cols = [m.monday_column_id for m in self.field_mappings if m.monday_column_id]
+
         if len(set(srcs)) != len(srcs):
             raise ValueError("field_mappings contains duplicate source_column values.")
         if len(set(cols)) != len(cols):
@@ -104,8 +111,10 @@ class Parameters(BaseModel):
             raise ValueError("unique_key.source_column is not present in field_mappings.")
         if self.unique_key.monday_column_id not in cols:
             raise ValueError("unique_key.monday_column_id is not present in field_mappings.")
+
         return self
 
+    # ---------- Helper properties ----------
     @property
     def mapping_dict(self) -> Dict[str, str]:
         """{ source_column -> monday_column_id }"""
