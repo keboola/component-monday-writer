@@ -25,15 +25,16 @@ class Authorization(BaseModel):
 # --------------------------------------------------------------------
 class FieldMapping(BaseModel):
     """One mapping row: CSV/Source column -> Monday column_id."""
-    source_column: str = Field(..., title="Source Column")
-    monday_column_id: Optional[str] = Field("", title="Monday Column ID")
+    source_column: Optional[str] = Field(None, title="Source Column")
+    monday_column_id: Optional[str] = Field(None, title="Monday Column ID")
 
     @model_validator(mode="after")
     def _validate(self) -> "FieldMapping":
-        self.source_column = (self.source_column or "").strip()
-        self.monday_column_id = (self.monday_column_id or "").strip()
+        # Skip validation during UI sync phases
         if not self.source_column:
-            raise ValueError("source_column cannot be empty.")
+            return self
+        self.source_column = self.source_column.strip()
+        self.monday_column_id = (self.monday_column_id or "").strip()
         return self
 
 
@@ -42,13 +43,16 @@ class FieldMapping(BaseModel):
 # --------------------------------------------------------------------
 class UniqueKey(BaseModel):
     """Defines upsert identity: which source column maps to which Monday column_id."""
-    source_column: str = Field(..., title="Unique Source Column")
-    monday_column_id: str = Field(..., title="Unique Monday Column ID")
+    source_column: Optional[str] = Field(None, title="Unique Source Column")
+    monday_column_id: Optional[str] = Field(None, title="Unique Monday Column ID")
 
     @model_validator(mode="after")
     def _validate(self) -> "UniqueKey":
-        self.source_column = (self.source_column or "").strip()
-        self.monday_column_id = (self.monday_column_id or "").strip()
+        # Skip validation when config not yet complete
+        if not self.source_column or not self.monday_column_id:
+            return self
+        self.source_column = self.source_column.strip()
+        self.monday_column_id = self.monday_column_id.strip()
         if not self.source_column:
             raise ValueError("unique_key.source_column cannot be empty.")
         if not self.monday_column_id:
@@ -63,26 +67,26 @@ class SyncOptions(BaseModel):
     """Runtime options for Monday sync."""
     workspace_id: Optional[Union[str, int]] = Field(None, title="Workspace ID")
     board_id: Optional[Union[str, int]] = Field(None, title="Board ID")
-    group_id: Optional[str] = Field("topics", title="Group ID")
+    group_id: Optional[str] = Field(None, title="Group ID")
     batch_size: int = Field(50, ge=1, le=500, title="Batch Size")
 
     @field_validator("workspace_id", "board_id", mode="before")
     @classmethod
     def _normalize_ids(cls, v):
-        if v is None:
+        if v in (None, "", "null"):
             return None
         return str(v).strip()
 
     @field_validator("group_id", mode="before")
     @classmethod
     def _normalize_group_id(cls, v):
-        if v is None:
-            return ""
+        if v in (None, "", "null"):
+            return None
         return str(v).strip()
 
     @model_validator(mode="after")
     def _validate(self) -> "SyncOptions":
-        # Skip strict validation when partial (UI phase)
+        # Skip validation in partial UI states
         if not self.board_id:
             return self
         if not str(self.board_id).strip():
@@ -103,19 +107,19 @@ class Parameters(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "Parameters":
-        # Skip validation for UI/sync actions
-        if self.action and self.action != "run":
+        # If this is a UI or sync action — skip full validation
+        if self.action and self.action not in ("run", None):
             return self
 
-        # Skip incomplete configs (autoload, test-connection)
-        if not all([self.authorization, self.sync_options, self.unique_key, self.field_mappings]):
+        # Skip incomplete configs (autoload or button click)
+        if not self.authorization or not self.sync_options:
             return self
 
-        # Full runtime validation
+        # Full validation only for run mode
         if not self.field_mappings:
             raise ValueError("field_mappings must contain at least one mapping.")
 
-        srcs = [m.source_column for m in self.field_mappings]
+        srcs = [m.source_column for m in self.field_mappings if m.source_column]
         cols = [m.monday_column_id for m in self.field_mappings if m.monday_column_id]
 
         if len(set(srcs)) != len(srcs):
@@ -123,10 +127,11 @@ class Parameters(BaseModel):
         if len(set(cols)) != len(cols):
             raise ValueError("field_mappings contains duplicate monday_column_id values.")
 
-        if self.unique_key.source_column not in srcs:
-            raise ValueError("unique_key.source_column is not present in field_mappings.")
-        if self.unique_key.monday_column_id not in cols:
-            raise ValueError("unique_key.monday_column_id is not present in field_mappings.")
+        if self.unique_key:
+            if self.unique_key.source_column and self.unique_key.source_column not in srcs:
+                raise ValueError("unique_key.source_column is not present in field_mappings.")
+            if self.unique_key.monday_column_id and self.unique_key.monday_column_id not in cols:
+                raise ValueError("unique_key.monday_column_id is not present in field_mappings.")
 
         return self
 
@@ -134,7 +139,7 @@ class Parameters(BaseModel):
     @property
     def mapping_dict(self) -> Dict[str, str]:
         """{ source_column -> monday_column_id }"""
-        return {m.source_column: m.monday_column_id for m in (self.field_mappings or [])}
+        return {m.source_column: m.monday_column_id for m in (self.field_mappings or []) if m.source_column}
 
     @property
     def monday_columns(self) -> List[str]:
@@ -144,9 +149,9 @@ class Parameters(BaseModel):
     @property
     def identity_pair(self) -> Optional[Tuple[str, str]]:
         """(unique_source_column, unique_monday_column_id)"""
-        if not self.unique_key:
+        if not self.unique_key or not self.unique_key.source_column:
             return None
-        return self.unique_key.source_column, self.unique_key.monday_column_id
+        return self.unique_key.source_column, (self.unique_key.monday_column_id or "")
 
 
 # --------------------------------------------------------------------
@@ -161,6 +166,7 @@ class Configuration(BaseModel):
         try:
             super().__init__(**data)
         except ValidationError as e:
+            # make error user friendly in UI
             msgs = [f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in e.errors()]
             raise UserException(f"Configuration validation error: {', '.join(msgs)}")
 

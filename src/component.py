@@ -121,6 +121,7 @@ class Component(ComponentBase):
 
         return [SelectElement(b["id"], b["name"]) for b in boards]
 
+    @sync_action("list_groups")
     def list_groups(self):
         """List all groups for the selected board"""
         params = self.configuration.parameters
