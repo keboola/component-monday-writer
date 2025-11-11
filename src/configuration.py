@@ -3,6 +3,9 @@ from pydantic import BaseModel, Field, ValidationError, model_validator, field_v
 from keboola.component.exceptions import UserException
 
 
+# --------------------------------------------------------------------
+# AUTHORIZATION
+# --------------------------------------------------------------------
 class Authorization(BaseModel):
     """Monday.com authorization."""
     api_key: str = Field(..., alias="#api_key", title="API Token")
@@ -11,12 +14,15 @@ class Authorization(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "Authorization":
-        self.api_key = self.api_key.strip()
+        self.api_key = (self.api_key or "").strip()
         if not self.api_key:
             raise ValueError("API token must be provided.")
         return self
 
 
+# --------------------------------------------------------------------
+# FIELD MAPPING
+# --------------------------------------------------------------------
 class FieldMapping(BaseModel):
     """One mapping row: CSV/Source column -> Monday column_id."""
     source_column: str = Field(..., title="Source Column")
@@ -31,6 +37,9 @@ class FieldMapping(BaseModel):
         return self
 
 
+# --------------------------------------------------------------------
+# UNIQUE KEY
+# --------------------------------------------------------------------
 class UniqueKey(BaseModel):
     """Defines upsert identity: which source column maps to which Monday column_id."""
     source_column: str = Field(..., title="Unique Source Column")
@@ -47,15 +56,19 @@ class UniqueKey(BaseModel):
         return self
 
 
+# --------------------------------------------------------------------
+# SYNC OPTIONS
+# --------------------------------------------------------------------
 class SyncOptions(BaseModel):
     """Runtime options for Monday sync."""
+    workspace_id: Optional[Union[str, int]] = Field(None, title="Workspace ID")
     board_id: Optional[Union[str, int]] = Field(None, title="Board ID")
     group_id: Optional[str] = Field("topics", title="Group ID")
     batch_size: int = Field(50, ge=1, le=500, title="Batch Size")
 
-    @field_validator("board_id", mode="before")
+    @field_validator("workspace_id", "board_id", mode="before")
     @classmethod
-    def _coerce_board_id(cls, v):
+    def _normalize_ids(cls, v):
         if v is None:
             return None
         return str(v).strip()
@@ -69,7 +82,7 @@ class SyncOptions(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "SyncOptions":
-        # Skip strict validation when incomplete (UI phase)
+        # Skip strict validation when partial (UI phase)
         if not self.board_id:
             return self
         if not str(self.board_id).strip():
@@ -77,6 +90,9 @@ class SyncOptions(BaseModel):
         return self
 
 
+# --------------------------------------------------------------------
+# PARAMETERS
+# --------------------------------------------------------------------
 class Parameters(BaseModel):
     """Root parameters for Monday.com writer."""
     authorization: Optional[Authorization] = None
@@ -91,7 +107,7 @@ class Parameters(BaseModel):
         if self.action and self.action != "run":
             return self
 
-        # Skip if config incomplete (UI autoload, test connection, etc.)
+        # Skip incomplete configs (autoload, test-connection)
         if not all([self.authorization, self.sync_options, self.unique_key, self.field_mappings]):
             return self
 
@@ -133,6 +149,9 @@ class Parameters(BaseModel):
         return self.unique_key.source_column, self.unique_key.monday_column_id
 
 
+# --------------------------------------------------------------------
+# CONFIGURATION WRAPPER
+# --------------------------------------------------------------------
 class Configuration(BaseModel):
     """Keboola config wrapper."""
     parameters: Optional[Parameters] = None
@@ -145,6 +164,7 @@ class Configuration(BaseModel):
             msgs = [f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in e.errors()]
             raise UserException(f"Configuration validation error: {', '.join(msgs)}")
 
+    # Convenience accessors
     @property
     def auth(self) -> Optional[Authorization]:
         return self.parameters.authorization if self.parameters else None

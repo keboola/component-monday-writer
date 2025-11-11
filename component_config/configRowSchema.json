@@ -1,24 +1,39 @@
 {
   "type": "object",
   "title": "Row Configuration",
-  "required": ["sync_options"],
+  "required": ["sync_options", "unique_key", "field_mappings"],
   "properties": {
     "sync_options": {
       "type": "object",
       "title": "Sync Options",
-      "required": [],
+      "required": ["workspace_id", "board_id"],
       "properties": {
+        "workspace_id": {
+          "type": "string",
+          "title": "Workspace",
+          "format": "select",
+          "description": "Select the Monday.com workspace.",
+          "propertyOrder": 1,
+          "options": {
+            "async": {
+              "label": "LOAD WORKSPACES",
+              "action": "list_workspaces",
+              "autoload": []
+            }
+          },
+          "enum": []
+        },
         "board_id": {
           "type": "string",
           "title": "Board",
           "format": "select",
-          "description": "Select a Monday.com board to write into.",
-          "propertyOrder": 1,
+          "description": "Select a Monday.com board within the chosen workspace.",
+          "propertyOrder": 2,
           "options": {
             "async": {
               "label": "LOAD BOARDS",
               "action": "list_boards",
-              "autoload": []
+              "autoload": ["parameters.sync_options.workspace_id"]
             }
           },
           "enum": []
@@ -28,7 +43,7 @@
           "title": "Group",
           "format": "select",
           "description": "Select a group within the selected board.",
-          "propertyOrder": 2,
+          "propertyOrder": 3,
           "options": {
             "async": {
               "label": "LOAD GROUPS",
@@ -41,11 +56,10 @@
         "batch_size": {
           "type": "integer",
           "title": "Batch Size",
-          "description": "Process Monday.com board data in chunks (default 50, max 500).",
           "minimum": 1,
           "maximum": 500,
           "default": 50,
-          "propertyOrder": 3
+          "propertyOrder": 4
         }
       },
       "propertyOrder": 100
@@ -54,8 +68,7 @@
     "unique_key": {
       "type": "object",
       "title": "Upsert Identity",
-      "description": "How to match existing items for update.",
-      "required": [],
+      "required": ["source_column", "monday_column_id"],
       "properties": {
         "source_column": {
           "type": "string",
@@ -70,16 +83,16 @@
         "monday_column_id": {
           "type": "string",
           "title": "Unique Monday Column",
-          "description": "Use '__item_name__' to match by item name, or select a column from Monday.com.",
+          "description": "Use '__item_name__' to match by item name, or select a Monday column.",
           "format": "select",
           "enum": [],
           "default": "__item_name__",
           "options": {
             "allowCustom": true,
-            "async": {
-              "label": "LOAD COLUMNS",
-              "action": "fetch_monday_columns",
-              "autoload": ["parameters.sync_options.board_id"]
+            "dependencies": {
+              "sync_options.board_id": {
+                "syncAction": "fetch_monday_columns"
+              }
             },
             "inputAttributes": {
               "placeholder": "__item_name__ or choose from dropdown"
@@ -95,39 +108,30 @@
     "field_mappings": {
       "type": "array",
       "title": "Column Mappings",
-      "description": "Map CSV columns to Monday.com columns. Use '__item_name__' to set the item name.",
+      "description": "Map CSV columns to Monday.com columns.",
       "minItems": 0,
       "format": "table",
-      "required": [],
       "items": {
         "type": "object",
         "title": "Field Mapping",
-        "required": [],
+        "required": ["source_column", "monday_column_id"],
         "properties": {
           "source_column": {
             "type": "string",
             "title": "Source Column",
-            "description": "CSV column name to read from.",
-            "options": {
-              "inputAttributes": { "placeholder": "e.g. Brand" }
-            },
             "propertyOrder": 1
           },
           "monday_column_id": {
             "type": "string",
             "title": "Monday Column",
-            "description": "Select a Monday.com column for this source field.",
             "format": "select",
             "enum": [],
             "options": {
               "allowCustom": true,
-              "async": {
-                "label": "LOAD COLUMNS",
-                "action": "fetch_monday_columns",
-                "autoload": ["parameters.sync_options.board_id"]
-              },
-              "inputAttributes": {
-                "placeholder": "e.g. Status, Due Date, Owner"
+              "dependencies": {
+                "sync_options.board_id": {
+                  "syncAction": "fetch_monday_columns"
+                }
               }
             },
             "propertyOrder": 2
@@ -135,21 +139,6 @@
         }
       },
       "propertyOrder": 300
-    },
-
-    "load_columns_button": {
-      "type": "button",
-      "format": "sync-action",
-      "title": "Load Source Columns",
-      "description": "Fetch columns from the selected input table and prefill Source Column options.",
-      "options": {
-        "async": {
-          "cache": false,
-          "label": "LOAD SOURCE COLUMNS",
-          "action": "return_monday_table_types"
-        }
-      },
-      "propertyOrder": 400
     }
   }
 }

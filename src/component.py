@@ -9,13 +9,19 @@ from keboola.component.exceptions import UserException
 from keboola.component.sync_actions import SelectElement
 
 from configuration import Configuration
-from api_client import ApiClient
+from api_client import ApiClient, MondayGraphQLClient
 from utils import get_sapi_column_definition
 
 
 class Component(ComponentBase):
     def __init__(self):
         super().__init__()
+
+    def _get_api_key(self) -> str:
+        try:
+            return self.configuration.parameters["authorization"]["#api_key"]
+        except Exception:
+            raise UserException("Missing Monday.com API token")
 
     def run(self):
         run_time = datetime.now(UTC)
@@ -65,35 +71,85 @@ class Component(ComponentBase):
             }
         }
 
+    @sync_action("list_workspaces")
+    def list_workspaces(self):
+        """List all accessible Monday.com workspaces"""
+        token = self._get_api_key()
+        client = MondayGraphQLClient(token)
+
+        query = """
+        query {
+          workspaces {
+            id
+            name
+          }
+        }
+        """
+
+        data = client.query(query)
+        workspaces = data.get("workspaces", [])
+        if not workspaces:
+            raise UserException("No workspaces found for this token")
+
+        return [SelectElement(ws["id"], ws["name"]) for ws in workspaces]
+
     @sync_action("list_boards")
     def list_boards(self):
-        """Fetch available Monday.com boards for dropdown."""
-        api_key = self.configuration.parameters.get("authorization", {}).get("#api_key")
-        if not api_key:
-            raise UserException("Please provide an API token first.")
+        """List all boards for selected workspace"""
+        params = self.configuration.parameters
+        workspace_id = params.get("sync_options", {}).get("workspace_id")
+        if not workspace_id:
+            raise UserException("Select a workspace first")
 
-        client = ApiClient(Configuration(**{"parameters": self.configuration.parameters}), self)
-        boards = client.client.boards.fetch_boards().data.boards
+        token = self._get_api_key()
+        client = MondayGraphQLClient(token)
 
-        return [SelectElement(b.id, b.name) for b in boards]
+        query = """
+        query ($workspace_ids: [ID!]) {
+          boards(workspace_ids: $workspace_ids) {
+            id
+            name
+            workspace_id
+          }
+        }
+        """
 
-    @sync_action("list_groups")
+        data = client.query(query, {"workspace_ids": [workspace_id]})
+        boards = data.get("boards", [])
+        if not boards:
+            raise UserException(f"No boards found in workspace {workspace_id}")
+
+        return [SelectElement(b["id"], b["name"]) for b in boards]
+
     def list_groups(self):
-        """Fetch groups for the selected Monday.com board."""
-        board_id = (
-            self.configuration.parameters.get("sync_options", {}).get("board_id")
-        )
-        api_key = self.configuration.parameters.get("authorization", {}).get("#api_key")
-
-        if not api_key:
-            raise UserException("Please provide an API token first.")
+        """List all groups for the selected board"""
+        params = self.configuration.parameters
+        board_id = params.get("sync_options", {}).get("board_id")
         if not board_id:
-            raise UserException("Please select a board before loading groups.")
+            raise UserException("Select a board first")
 
-        client = ApiClient(Configuration(**{"parameters": self.configuration.parameters}), self)
-        result = client.client.boards.fetch_groups_by_board_id(board_id=board_id)
+        token = self._get_api_key()
+        client = MondayGraphQLClient(token)
 
-        return [SelectElement(g.id, g.title) for g in result.data.boards[0].groups]
+        query = """
+        query ($board_ids: [ID!]) {
+          boards(ids: $board_ids) {
+            id
+            name
+            groups {
+              id
+              title
+            }
+          }
+        }
+        """
+
+        data = client.query(query, {"board_ids": [board_id]})
+        boards = data.get("boards", [])
+        if not boards or not boards[0].get("groups"):
+            raise UserException(f"No groups found for board {board_id}")
+
+        return [SelectElement(g["id"], g["title"]) for g in boards[0]["groups"]]
 
     @sync_action("fetch_monday_columns")
     def fetch_monday_columns(self):

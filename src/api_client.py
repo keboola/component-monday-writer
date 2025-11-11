@@ -2,12 +2,30 @@ import os
 import csv
 import logging
 import re
+import requests
 from datetime import datetime
 from typing import Dict, List, Iterable
 
 from keboola.component.exceptions import UserException
 from monday_sdk import MondayClient as SDKMondayClient
 
+class MondayGraphQLClient:
+    def __init__(self, token: str):
+        self.token = token
+        self.url = "https://api.monday.com/v2"
+
+    def query(self, query: str, variables=None):
+        headers = {
+            "Authorization": self.token,
+            "Content-Type": "application/json",
+        }
+        resp = requests.post(self.url, headers=headers, json={"query": query, "variables": variables or {}})
+        if resp.status_code != 200:
+            raise UserException(f"GraphQL HTTP {resp.status_code}: {resp.text}")
+        data = resp.json()
+        if "errors" in data:
+            raise UserException(f"GraphQL Error: {data['errors']}")
+        return data["data"]
 
 class ApiClient:
     """
