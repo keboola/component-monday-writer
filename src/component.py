@@ -191,7 +191,9 @@ class Component(ComponentBase):
         base_url = self.environment_variables.url
 
         if not token:
-            raise UserException("Storage API Token is missing. Enable 'Forward Token' in the Keboola Component settings.")
+            raise UserException(
+                "Storage API Token is missing. Enable 'Forward Token' in the Keboola Component settings."
+            )
 
         table_id = None
         try:
