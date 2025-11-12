@@ -1,12 +1,12 @@
 {
   "type": "object",
   "title": "Row Configuration",
-  "required": ["sync_options", "unique_key", "field_mappings"],
+  "required": [],
   "properties": {
     "sync_options": {
       "type": "object",
       "title": "Sync Options",
-      "required": ["workspace_id", "board_id"],
+      "required": [],
       "properties": {
         "workspace_id": {
           "type": "string",
@@ -18,7 +18,8 @@
             "async": {
               "label": "LOAD WORKSPACES",
               "action": "list_workspaces",
-              "autoload": []
+              "autoload": [],
+              "cache": false
             }
           },
           "enum": []
@@ -33,7 +34,8 @@
             "async": {
               "label": "LOAD BOARDS",
               "action": "list_boards",
-              "autoload": ["parameters.sync_options.workspace_id"]
+              "autoload": ["parameters.sync_options.workspace_id"],
+              "cache": false
             }
           },
           "enum": []
@@ -48,7 +50,8 @@
             "async": {
               "label": "LOAD GROUPS",
               "action": "list_groups",
-              "autoload": ["parameters.sync_options.board_id"]
+              "autoload": ["parameters.sync_options.board_id"],
+              "cache": false
             }
           },
           "enum": []
@@ -69,6 +72,7 @@
       "type": "object",
       "title": "Unique Field(s)",
       "description": "Select one or more fields from your source data that uniquely identify each record.",
+      "required": [],
       "properties": {
         "source_column": {
           "type": "string",
@@ -78,7 +82,9 @@
           "options": {
             "async": {
               "label": "LOAD SOURCE FIELDS",
-              "action": "list_source_columns"
+              "action": "list_source_columns",
+              "autoload": [],
+              "cache": false
             }
           },
           "enum": []
@@ -101,6 +107,16 @@
           "source_column": {
             "type": "string",
             "title": "Source Column",
+            "format": "select",
+            "options": {
+              "async": {
+                "label": "LOAD SOURCE FIELDS",
+                "action": "list_source_columns",
+                "autoload": [],
+                "cache": false
+              }
+            },
+            "enum": [],
             "propertyOrder": 1
           },
           "monday_column_id": {
@@ -112,7 +128,8 @@
               "allowCustom": true,
               "dependencies": {
                 "sync_options.board_id": {
-                  "syncAction": "list_monday_columns"
+                  "syncAction": "list_monday_columns",
+                  "autoload": ["parameters.sync_options.board_id"]
                 }
               }
             },

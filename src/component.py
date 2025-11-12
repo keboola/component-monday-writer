@@ -154,7 +154,7 @@ class Component(ComponentBase):
 
     @sync_action("list_monday_columns")
     def list_monday_columns(self):
-        """List Monday.com columns for the selected board."""
+        """List Monday.com columns for the selected board (no special inserts)."""
         board_id = (self.configuration.parameters.get("sync_options", {}) or {}).get("board_id")
         if not board_id:
             raise UserException("Select a board first to load Monday columns.")
@@ -165,11 +165,7 @@ class Component(ComponentBase):
         query = """
         query ($board_ids: [ID!]) {
           boards(ids: $board_ids) {
-            columns {
-              id
-              title
-              type
-            }
+            columns { id title type }
           }
         }
         """
@@ -178,37 +174,53 @@ class Component(ComponentBase):
         if not boards or not boards[0].get("columns"):
             raise UserException(f"No columns found for board {board_id}.")
 
-        return [
-            SelectElement(
-                value=c["id"],
-                label=f"{c['title']} ({c['id']})"
-            )
-            for c in boards[0]["columns"]
-        ]
+        opts = []
+        for c in boards[0]["columns"]:
+            cid = c.get("id")
+            title = c.get("title") or cid
+            if cid:
+                opts.append(SelectElement(value=cid, label=f"{title} ({cid})"))
+        if not opts:
+            raise UserException(f"No usable columns returned for board {board_id}.")
+        return opts
 
     @sync_action("list_source_columns")
     def list_source_columns(self):
-        """List source columns from mapped Keboola input table."""
+        """List source columns from the mapped Keboola input table."""
         if not self.environment_variables.token:
             raise UserException(
                 "Storage API Token is missing. Enable 'Forward Token' in the Keboola Component settings."
             )
 
         if not self.configuration.tables_input_mapping or len(self.configuration.tables_input_mapping) != 1:
-            raise UserException(
-                "Exactly one input table must be mapped in the configuration."
-            )
+            raise UserException("Exactly one input table must be mapped in the configuration.")
 
         table_id = self.configuration.tables_input_mapping[0].source
-        columns = get_sapi_column_definition(
+        cols = get_sapi_column_definition(
             table_id,
             self.environment_variables.url,
             self.environment_variables.token,
         )
-        if not columns:
+
+        names = []
+        for c in cols or []:
+            if isinstance(c, str):
+                names.append(c)
+            elif isinstance(c, dict):
+                n = c.get("name") or c.get("id") or c.get("column")
+                if n:
+                    names.append(str(n))
+            else:
+                n = str(c).strip()
+                if n:
+                    names.append(n)
+
+        if not names:
             raise UserException("No columns found in the mapped input table.")
 
-        return [SelectElement(c["name"], c["name"]) for c in columns]
+        names = sorted(set(names), key=str.lower)
+        return [SelectElement(v, v) for v in names]
+
 
 
 """
