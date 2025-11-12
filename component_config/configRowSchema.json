@@ -67,39 +67,21 @@
 
     "unique_key": {
       "type": "object",
-      "title": "Upsert Identity",
-      "required": ["source_column", "monday_column_id"],
+      "title": "Unique Field(s)",
+      "description": "Select one or more fields from your source data that uniquely identify each record.",
       "properties": {
         "source_column": {
           "type": "string",
           "title": "Unique Source Column",
-          "description": "CSV column containing the business key.",
-          "options": {
-            "inputAttributes": { "placeholder": "e.g. Request Number" },
-            "grid_columns": 2
-          },
-          "propertyOrder": 1
-        },
-        "monday_column_id": {
-          "type": "string",
-          "title": "Unique Monday Column",
-          "description": "Use '__item_name__' to match by item name, or select a Monday column.",
           "format": "select",
-          "enum": [],
-          "default": "__item_name__",
+          "description": "Choose the unique field from your source data.",
           "options": {
-            "allowCustom": true,
-            "dependencies": {
-              "sync_options.board_id": {
-                "syncAction": "fetch_monday_columns"
-              }
-            },
-            "inputAttributes": {
-              "placeholder": "__item_name__ or choose from dropdown"
-            },
-            "grid_columns": 2
+            "async": {
+              "label": "LOAD SOURCE FIELDS",
+              "action": "list_source_columns"
+            }
           },
-          "propertyOrder": 2
+          "enum": []
         }
       },
       "propertyOrder": 200
@@ -130,7 +112,7 @@
               "allowCustom": true,
               "dependencies": {
                 "sync_options.board_id": {
-                  "syncAction": "fetch_monday_columns"
+                  "syncAction": "list_monday_columns"
                 }
               }
             },

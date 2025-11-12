@@ -152,19 +152,64 @@ class Component(ComponentBase):
 
         return [SelectElement(g["id"], g["title"]) for g in boards[0]["groups"]]
 
-    @sync_action("fetch_monday_columns")
-    def fetch_monday_columns(self):
+    @sync_action("list_monday_columns")
+    def list_monday_columns(self):
+        """List Monday.com columns for the selected board."""
         board_id = (self.configuration.parameters.get("sync_options", {}) or {}).get("board_id")
         if not board_id:
             raise UserException("Select a board first to load Monday columns.")
-        cfg = Configuration(**{"parameters": self.configuration.parameters})
-        client = ApiClient(cfg, self).client
-        res = client.boards.fetch_columns_by_board_id(board_id=str(board_id))
-        cols = getattr(res, "data", None)
-        options = [SelectElement(value=c.id, label=f"{c.title} ({c.id})") for c in cols.boards[0].columns]
-        options.insert(0, SelectElement(value="__item_name__", label="__item_name__ (Item Name)"))
 
-        return options
+        token = self._get_api_key()
+        client = MondayGraphQLClient(token)
+
+        query = """
+        query ($board_ids: [ID!]) {
+          boards(ids: $board_ids) {
+            columns {
+              id
+              title
+              type
+            }
+          }
+        }
+        """
+        data = client.query(query, {"board_ids": [board_id]})
+        boards = data.get("boards", [])
+        if not boards or not boards[0].get("columns"):
+            raise UserException(f"No columns found for board {board_id}.")
+
+        return [
+            SelectElement(
+                value=c["id"],
+                label=f"{c['title']} ({c['id']})"
+            )
+            for c in boards[0]["columns"]
+        ]
+
+    @sync_action("list_source_columns")
+    def list_source_columns(self):
+        """List source columns from mapped Keboola input table."""
+        if not self.environment_variables.token:
+            raise UserException(
+                "Storage API Token is missing. Enable 'Forward Token' in the Keboola Component settings."
+            )
+
+        if not self.configuration.tables_input_mapping or len(self.configuration.tables_input_mapping) != 1:
+            raise UserException(
+                "Exactly one input table must be mapped in the configuration."
+            )
+
+        table_id = self.configuration.tables_input_mapping[0].source
+        columns = get_sapi_column_definition(
+            table_id,
+            self.environment_variables.url,
+            self.environment_variables.token,
+        )
+        if not columns:
+            raise UserException("No columns found in the mapped input table.")
+
+        return [SelectElement(c["name"], c["name"]) for c in columns]
+
 
 """
 Main entrypoint

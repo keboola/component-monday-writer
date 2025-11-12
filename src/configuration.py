@@ -44,19 +44,14 @@ class FieldMapping(BaseModel):
 class UniqueKey(BaseModel):
     """Defines upsert identity: which source column maps to which Monday column_id."""
     source_column: Optional[str] = Field(None, title="Unique Source Column")
-    monday_column_id: Optional[str] = Field(None, title="Unique Monday Column ID")
+    monday_column_id: Optional[str] = Field("__item_name__", title="Unique Monday Column ID")
 
     @model_validator(mode="after")
     def _validate(self) -> "UniqueKey":
-        # Skip validation when config not yet complete
-        if not self.source_column or not self.monday_column_id:
+        if not self.source_column:
             return self
         self.source_column = self.source_column.strip()
-        self.monday_column_id = self.monday_column_id.strip()
-        if not self.source_column:
-            raise ValueError("unique_key.source_column cannot be empty.")
-        if not self.monday_column_id:
-            raise ValueError("unique_key.monday_column_id cannot be empty.")
+        self.monday_column_id = (self.monday_column_id or "__item_name__").strip()
         return self
 
 
