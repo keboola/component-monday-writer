@@ -186,40 +186,40 @@ class Component(ComponentBase):
 
     @sync_action("list_source_columns")
     def list_source_columns(self):
-        """List source columns from the mapped Keboola input table."""
-        if not self.environment_variables.token:
-            raise UserException(
-                "Storage API Token is missing. Enable 'Forward Token' in the Keboola Component settings."
-            )
+        """List source columns from mapped Keboola input table."""
+        token = self.environment_variables.token
+        base_url = self.environment_variables.url
 
-        if not self.configuration.tables_input_mapping or len(self.configuration.tables_input_mapping) != 1:
-            raise UserException("Exactly one input table must be mapped in the configuration.")
+        if not token:
+            raise UserException("Storage API Token is missing. Enable 'Forward Token' in the Keboola Component settings.")
 
-        table_id = self.configuration.tables_input_mapping[0].source
-        cols = get_sapi_column_definition(
-            table_id,
-            self.environment_variables.url,
-            self.environment_variables.token,
-        )
+        table_id = None
+        try:
+            table_mappings = self.configuration.tables_input_mapping
+            if table_mappings and len(table_mappings) == 1:
+                table_id = table_mappings[0].source
+        except Exception:
+            table_id = None
 
-        names = []
-        for c in cols or []:
-            if isinstance(c, str):
-                names.append(c)
-            elif isinstance(c, dict):
-                n = c.get("name") or c.get("id") or c.get("column")
-                if n:
-                    names.append(str(n))
-            else:
-                n = str(c).strip()
-                if n:
-                    names.append(n)
+        if not table_id:
+            raise UserException("No input table mapping detected. Please map an input table first.")
 
-        if not names:
-            raise UserException("No columns found in the mapped input table.")
+        try:
+            columns = get_sapi_column_definition(table_id, base_url, token)
+        except Exception as e:
+            raise UserException(f"Failed to fetch columns for table '{table_id}': {e}")
 
-        names = sorted(set(names), key=str.lower)
-        return [SelectElement(v, v) for v in names]
+        normalized = []
+        for c in columns or []:
+            if isinstance(c, dict) and "name" in c:
+                normalized.append(c["name"])
+            elif isinstance(c, str):
+                normalized.append(c)
+        if not normalized:
+            raise UserException(f"No columns found in input table '{table_id}'.")
+
+        return [SelectElement(name, name) for name in normalized]
+
 
 
 

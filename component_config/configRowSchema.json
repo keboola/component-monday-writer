@@ -125,12 +125,10 @@
             "format": "select",
             "enum": [],
             "options": {
-              "allowCustom": true,
-              "dependencies": {
-                "sync_options.board_id": {
-                  "syncAction": "list_monday_columns",
-                  "autoload": ["parameters.sync_options.board_id"]
-                }
+              "async": {
+                "label": "LOAD MONDAY COLUMNS",
+                "action": "list_monday_columns",
+                "autoload": ["parameters.sync_options.board_id"]
               }
             },
             "propertyOrder": 2

@@ -48,9 +48,10 @@ class UniqueKey(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "UniqueKey":
+        # allow empty during async/partial UI
         if not self.source_column:
             return self
-        self.source_column = self.source_column.strip()
+        self.source_column = (self.source_column or "").strip()
         self.monday_column_id = (self.monday_column_id or "__item_name__").strip()
         return self
 
@@ -81,11 +82,9 @@ class SyncOptions(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "SyncOptions":
-        # Skip validation in partial UI states
         if not self.board_id:
             return self
-        if not str(self.board_id).strip():
-            raise ValueError("board_id must be provided.")
+        self.board_id = str(self.board_id).strip()
         return self
 
 
@@ -102,15 +101,12 @@ class Parameters(BaseModel):
 
     @model_validator(mode="after")
     def _validate(self) -> "Parameters":
-        # If this is a UI or sync action — skip full validation
         if self.action and self.action not in ("run", None):
             return self
 
-        # Skip incomplete configs (autoload or button click)
         if not self.authorization or not self.sync_options:
             return self
 
-        # Full validation only for run mode
         if not self.field_mappings:
             raise ValueError("field_mappings must contain at least one mapping.")
 
@@ -123,9 +119,14 @@ class Parameters(BaseModel):
             raise ValueError("field_mappings contains duplicate monday_column_id values.")
 
         if self.unique_key:
+            # Ensure selected unique source exists among field mappings (if user picked one)
             if self.unique_key.source_column and self.unique_key.source_column not in srcs:
                 raise ValueError("unique_key.source_column is not present in field_mappings.")
-            if self.unique_key.monday_column_id and self.unique_key.monday_column_id not in cols:
+
+            # Only enforce Monday-side presence if it's NOT the implicit '__item_name__'
+            if (self.unique_key.monday_column_id
+                    and self.unique_key.monday_column_id != "__item_name__"
+                    and self.unique_key.monday_column_id not in cols):
                 raise ValueError("unique_key.monday_column_id is not present in field_mappings.")
 
         return self
