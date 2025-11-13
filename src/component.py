@@ -186,43 +186,27 @@ class Component(ComponentBase):
 
     @sync_action("list_source_columns")
     def list_source_columns(self):
-        """List source columns from mapped Keboola input table."""
+        """List source columns from the mapped Keboola input table."""
         token = self.environment_variables.token
         base_url = self.environment_variables.url
-
         if not token:
             raise UserException(
-                "Storage API Token is missing. Enable 'Forward Token' in the Keboola Component settings."
+                "Storage API Token is missing. Enable 'Forward Token' in the Component settings."
             )
 
-        table_id = None
-        try:
-            table_mappings = self.configuration.tables_input_mapping
-            if table_mappings and len(table_mappings) == 1:
-                table_id = table_mappings[0].source
-        except Exception:
-            table_id = None
+        if not self.configuration.tables_input_mapping or len(self.configuration.tables_input_mapping) != 1:
+            raise UserException("Exactly one input table must be mapped in the configuration.")
 
-        if not table_id:
-            raise UserException("No input table mapping detected. Please map an input table first.")
-
+        table_id = self.configuration.tables_input_mapping[0].source
         try:
             columns = get_sapi_column_definition(table_id, base_url, token)
         except Exception as e:
             raise UserException(f"Failed to fetch columns for table '{table_id}': {e}")
 
-        normalized = []
-        for c in columns or []:
-            if isinstance(c, dict) and "name" in c:
-                normalized.append(c["name"])
-            elif isinstance(c, str):
-                normalized.append(c)
-        if not normalized:
+        if not columns:
             raise UserException(f"No columns found in input table '{table_id}'.")
 
-        return [SelectElement(name, name) for name in normalized]
-
-
+        return [SelectElement(c, c) for c in columns]
 
 
 """
