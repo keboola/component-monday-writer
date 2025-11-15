@@ -209,40 +209,42 @@ class Component(ComponentBase):
 
     @sync_action("generate_field_mappings")
     def generate_field_mappings(self):
-        """
-        Generate field_mappings array from the source table columns.
-        Each source column becomes one row with monday_column_id = "".
-        """
+        """Generate field_mappings array from the source table columns."""
         token = self.environment_variables.token
-        table_id = None
+        url = self.environment_variables.url
 
         if not token:
             raise UserException(
                 "Storage API Token is missing. Enable 'Forward Token' in the Component settings."
             )
 
-        try:
-            mappings = self.configuration.tables_input_mapping
-            if mappings and len(mappings) == 1:
-                table_id = mappings[0].source
-        except Exception:
-            table_id = None
+        mappings = self.configuration.tables_input_mapping
+        if not mappings or len(mappings) != 1:
+            raise UserException("Exactly one input table must be mapped.")
 
-        if not table_id:
-            raise UserException("No input table mapping found. Please map one input table first.")
+        table_id = mappings[0].source
 
         try:
-            url = self.environment_variables.url
-            columns = get_sapi_column_definition(table_id, url, token)
+            cols = get_sapi_column_definition(table_id, url, token)
         except Exception as e:
             raise UserException(f"Failed to fetch columns for table '{table_id}': {e}")
 
-        if not columns:
+        if not cols:
             raise UserException(f"No columns found in input table '{table_id}'.")
+
+        normalized = []
+        for c in cols:
+            if isinstance(c, dict):
+                if "source_name" in c:
+                    normalized.append(c["source_name"])
+                elif "name" in c:
+                    normalized.append(c["name"])
+            elif isinstance(c, str):
+                normalized.append(c)
 
         field_mappings = [
             {"source_column": col, "monday_column_id": ""}
-            for col in columns
+            for col in normalized
         ]
 
         return {

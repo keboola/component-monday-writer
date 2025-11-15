@@ -71,7 +71,7 @@
     "unique_key": {
       "type": "object",
       "title": "Unique Field(s)",
-      "description": "Select one or more fields from your source data that uniquely identify each record.",
+      "description": "Select the unique field from your source data.",
       "required": [],
       "properties": {
         "source_column": {
@@ -110,7 +110,7 @@
       "items": {
         "type": "object",
         "title": "Field Mapping",
-        "required": ["source_column", "monday_column_id"],
+        "required": [],
         "properties": {
           "source_column": {
             "type": "string",
