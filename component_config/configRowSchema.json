@@ -6,21 +6,16 @@
     "sync_options": {
       "type": "object",
       "title": "Sync Options",
-      "required": [],
       "propertyOrder": 100,
       "properties": {
         "workspace_id": {
           "type": "string",
           "title": "Workspace",
           "format": "select",
-          "description": "Select the Monday.com workspace.",
-          "propertyOrder": 1,
           "options": {
             "async": {
               "label": "LOAD WORKSPACES",
-              "action": "list_workspaces",
-              "autoload": [],
-              "cache": false
+              "action": "list_workspaces"
             }
           },
           "enum": []
@@ -29,14 +24,11 @@
           "type": "string",
           "title": "Board",
           "format": "select",
-          "description": "Select a Monday.com board within the chosen workspace.",
-          "propertyOrder": 2,
           "options": {
             "async": {
               "label": "LOAD BOARDS",
               "action": "list_boards",
-              "autoload": ["parameters.sync_options.workspace_id"],
-              "cache": false
+              "autoload": ["parameters.sync_options.workspace_id"]
             }
           },
           "enum": []
@@ -45,14 +37,11 @@
           "type": "string",
           "title": "Group",
           "format": "select",
-          "description": "Select a group within the selected board.",
-          "propertyOrder": 3,
           "options": {
             "async": {
               "label": "LOAD GROUPS",
               "action": "list_groups",
-              "autoload": ["parameters.sync_options.board_id"],
-              "cache": false
+              "autoload": ["parameters.sync_options.board_id"]
             }
           },
           "enum": []
@@ -60,10 +49,9 @@
         "batch_size": {
           "type": "integer",
           "title": "Batch Size",
-          "minimum": 1,
-          "maximum": 500,
           "default": 50,
-          "propertyOrder": 4
+          "minimum": 1,
+          "maximum": 500
         }
       }
     },
@@ -71,24 +59,13 @@
     "unique_key": {
       "type": "object",
       "title": "Unique Field(s)",
-      "description": "Select the field from your source data that uniquely identifies each record.",
-      "required": [],
       "propertyOrder": 200,
       "properties": {
         "source_column": {
           "type": "string",
           "title": "Unique Source Column",
           "format": "select",
-          "description": "Choose the unique field from your source data.",
-          "options": {
-            "async": {
-              "label": "LOAD SOURCE FIELDS",
-              "action": "list_source_columns",
-              "autoload": [],
-              "cache": false
-            }
-          },
-          "enum": []
+          "enumSource": "source_columns"
         }
       }
     },
@@ -103,7 +80,6 @@
         "async": {
           "label": "LOAD FIELD MAPPINGS",
           "action": "generate_field_mappings",
-          "autoload": [],
           "cache": false
         }
       }
@@ -112,10 +88,8 @@
     "field_mappings": {
       "type": "array",
       "title": "Column Mappings",
-      "description": "Map CSV columns to Monday.com columns.",
-      "minItems": 0,
-      "format": "table",
       "propertyOrder": 300,
+      "format": "table",
       "items": {
         "type": "object",
         "title": "Field Mapping",
@@ -124,32 +98,22 @@
           "source_column": {
             "type": "string",
             "title": "Source Column",
-            "format": "select",
-            "propertyOrder": 1,
-            "options": {
-              "async": {
-                "label": "LOAD SOURCE FIELDS",
-                "action": "list_source_columns",
-                "autoload": [],
-                "cache": false
-              }
-            },
-            "enum": []
+            "enumSource": "source_columns",
+            "propertyOrder": 1
           },
           "monday_column_id": {
             "type": "string",
             "title": "Monday Column",
             "format": "select",
+            "enum": [],
             "propertyOrder": 2,
             "options": {
               "async": {
                 "label": "LOAD MONDAY COLUMNS",
                 "action": "list_monday_columns",
-                "autoload": ["parameters.sync_options.board_id"],
-                "cache": false
+                "autoload": ["parameters.sync_options.board_id"]
               }
-            },
-            "enum": []
+            }
           }
         }
       }
