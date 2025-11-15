@@ -71,7 +71,7 @@
     "unique_key": {
       "type": "object",
       "title": "Unique Field(s)",
-      "description": "Select the unique field from your source data.",
+      "description": "Select one or more fields from your source data that uniquely identify each record.",
       "required": [],
       "properties": {
         "source_column": {
@@ -93,24 +93,30 @@
       "propertyOrder": 200
     },
 
+    "load_field_mappings": {
+      "type": "object",
+      "title": "Generate Field Mappings",
+      "options": {
+        "async": {
+          "label": "LOAD FIELD MAPPINGS",
+          "action": "generate_field_mappings",
+          "autoload": [],
+          "cache": false
+        }
+      },
+      "propertyOrder": 250
+    },
+
     "field_mappings": {
       "type": "array",
       "title": "Column Mappings",
       "description": "Map CSV columns to Monday.com columns.",
       "minItems": 0,
       "format": "table",
-      "options": {
-        "async": {
-          "label": "GENERATE FIELD MAPPINGS",
-          "action": "generate_field_mappings",
-          "autoload": [],
-          "cache": false
-        }
-      },
       "items": {
         "type": "object",
         "title": "Field Mapping",
-        "required": [],
+        "required": ["source_column", "monday_column_id"],
         "properties": {
           "source_column": {
             "type": "string",
