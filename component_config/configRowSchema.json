@@ -99,6 +99,14 @@
       "description": "Map CSV columns to Monday.com columns.",
       "minItems": 0,
       "format": "table",
+      "options": {
+        "async": {
+          "label": "GENERATE FIELD MAPPINGS",
+          "action": "generate_field_mappings",
+          "autoload": [],
+          "cache": false
+        }
+      },
       "items": {
         "type": "object",
         "title": "Field Mapping",

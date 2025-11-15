@@ -207,6 +207,51 @@ class Component(ComponentBase):
 
         return [SelectElement(c, c) for c in cols]
 
+    @sync_action("generate_field_mappings")
+    def generate_field_mappings(self):
+        """
+        Generate field_mappings array from the source table columns.
+        Each source column becomes one row with monday_column_id = "".
+        """
+        token = self.environment_variables.token
+        table_id = None
+
+        if not token:
+            raise UserException(
+                "Storage API Token is missing. Enable 'Forward Token' in the Component settings."
+            )
+
+        try:
+            mappings = self.configuration.tables_input_mapping
+            if mappings and len(mappings) == 1:
+                table_id = mappings[0].source
+        except Exception:
+            table_id = None
+
+        if not table_id:
+            raise UserException("No input table mapping found. Please map one input table first.")
+
+        try:
+            url = self.environment_variables.url
+            columns = get_sapi_column_definition(table_id, url, token)
+        except Exception as e:
+            raise UserException(f"Failed to fetch columns for table '{table_id}': {e}")
+
+        if not columns:
+            raise UserException(f"No columns found in input table '{table_id}'.")
+
+        field_mappings = [
+            {"source_column": col, "monday_column_id": ""}
+            for col in columns
+        ]
+
+        return {
+            "type": "data",
+            "data": {
+                "field_mappings": field_mappings
+            }
+        }
+
 
 """
 Main entrypoint
