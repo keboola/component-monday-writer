@@ -186,27 +186,26 @@ class Component(ComponentBase):
 
     @sync_action("list_source_columns")
     def list_source_columns(self):
-        """List source columns from the mapped Keboola input table."""
         token = self.environment_variables.token
-        base_url = self.environment_variables.url
+        url = self.environment_variables.url
+
         if not token:
-            raise UserException(
-                "Storage API Token is missing. Enable 'Forward Token' in the Component settings."
-            )
+            raise UserException("Storage API Token is missing. Enable 'Forward Token' in the Component settings.")
 
         if not self.configuration.tables_input_mapping or len(self.configuration.tables_input_mapping) != 1:
             raise UserException("Exactly one input table must be mapped in the configuration.")
 
         table_id = self.configuration.tables_input_mapping[0].source
+
         try:
-            columns = get_sapi_column_definition(table_id, base_url, token)
+            cols = get_sapi_column_definition(table_id, url, token)
         except Exception as e:
             raise UserException(f"Failed to fetch columns for table '{table_id}': {e}")
 
-        if not columns:
+        if not cols:
             raise UserException(f"No columns found in input table '{table_id}'.")
 
-        return [SelectElement(c, c) for c in columns]
+        return [SelectElement(c, c) for c in cols]
 
 
 """
