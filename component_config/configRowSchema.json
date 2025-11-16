@@ -56,6 +56,21 @@
       }
     },
 
+    "load_metadata_button": {
+      "type": "button",
+      "format": "sync-action",
+      "title": "Load Columns & Metadata",
+      "description": "Loads source table columns, Monday.com columns, and generates field mappings.",
+      "propertyOrder": 150,
+      "options": {
+        "async": {
+          "label": "LOAD METADATA",
+          "action": "load_all_metadata",
+          "cache": false
+        }
+      }
+    },
+
     "unique_key": {
       "type": "object",
       "title": "Unique Field(s)",
@@ -66,21 +81,6 @@
           "title": "Unique Source Column",
           "format": "select",
           "enumSource": "source_columns"
-        }
-      }
-    },
-
-    "generate_field_mappings_button": {
-      "type": "button",
-      "format": "sync-action",
-      "title": "Generate Field Mappings",
-      "description": "Loads all source fields from the input table and pre-fills the mapping section.",
-      "propertyOrder": 250,
-      "options": {
-        "async": {
-          "label": "LOAD FIELD MAPPINGS",
-          "action": "generate_field_mappings",
-          "cache": false
         }
       }
     },
@@ -105,15 +105,8 @@
             "type": "string",
             "title": "Monday Column",
             "format": "select",
-            "enum": [],
-            "propertyOrder": 2,
-            "options": {
-              "async": {
-                "label": "LOAD MONDAY COLUMNS",
-                "action": "list_monday_columns",
-                "autoload": ["parameters.sync_options.board_id"]
-              }
-            }
+            "enumSource": "monday_columns",
+            "propertyOrder": 2
           }
         }
       }

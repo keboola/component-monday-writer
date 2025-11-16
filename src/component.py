@@ -17,6 +17,15 @@ class Component(ComponentBase):
     def __init__(self):
         super().__init__()
 
+        raw_config = {
+            "parameters": self.configuration.parameters,
+            "action": getattr(self.configuration, "action", "run"),
+        }
+        self.params = Configuration(**raw_config)
+
+        api_key = self._get_api_key()
+        self.monday_client = MondayGraphQLClient(api_key)
+
     def _get_api_key(self) -> str:
         try:
             return self.configuration.parameters["authorization"]["#api_key"]
@@ -250,6 +259,48 @@ class Component(ComponentBase):
         return {
             "type": "data",
             "data": {
+                "field_mappings": field_mappings
+            }
+        }
+
+    @sync_action("load_all_metadata")
+    def load_all_metadata(self):
+        token = self.environment_variables.token
+        url = self.environment_variables.url
+
+        if not token:
+            raise UserException("Forward Token must be enabled.")
+
+        table_id = self.configuration.tables_input_mapping[0].source
+        source_cols = get_sapi_column_definition(table_id, url, token)
+
+        board_id = self.params.sync_options.board_id
+        if not board_id:
+            raise UserException("Select a board first.")
+
+        query = """
+        query ($board_ids: [ID!]) {
+          boards(ids: $board_ids) {
+            columns { id title type }
+          }
+        }
+        """
+        data = self.monday_client.query(query, {"board_ids": [board_id]})
+        monday_cols_raw = data.get("boards", [])[0].get("columns", [])
+
+        monday_cols = [
+            {"id": c["id"], "title": c.get("title") or c["id"]}
+            for c in monday_cols_raw
+            if c.get("id")
+        ]
+
+        field_mappings = [{"source_column": col, "monday_column_id": ""} for col in source_cols]
+
+        return {
+            "type": "data",
+            "data": {
+                "available_source_columns": source_cols,
+                "available_monday_columns": monday_cols,
                 "field_mappings": field_mappings
             }
         }
