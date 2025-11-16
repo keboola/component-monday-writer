@@ -265,18 +265,47 @@ class Component(ComponentBase):
 
     @sync_action("load_all_metadata")
     def load_all_metadata(self):
+        """
+        Loads:
+        - source table columns (Keboola)
+        - monday.com columns (selected board)
+        - generates initial field mappings
+        """
+        # Validate token
         token = self.environment_variables.token
         url = self.environment_variables.url
-
         if not token:
             raise UserException("Forward Token must be enabled.")
 
-        table_id = self.configuration.tables_input_mapping[0].source
-        source_cols = get_sapi_column_definition(table_id, url, token)
+        # Validate table mapping
+        mappings = self.configuration.tables_input_mapping
+        if not mappings or len(mappings) != 1:
+            raise UserException("Exactly one input table must be mapped.")
+        table_id = mappings[0].source
 
-        board_id = self.params.sync_options.board_id
+        # 1) Load source columns
+        try:
+            source_cols = get_sapi_column_definition(table_id, url, token)
+        except Exception as e:
+            raise UserException(f"Failed to fetch source columns: {e}")
+
+        normalized_source_cols = []
+        for c in source_cols:
+            if isinstance(c, dict):
+                if "source_name" in c:
+                    normalized_source_cols.append(c["source_name"])
+                elif "name" in c:
+                    normalized_source_cols.append(c["name"])
+            elif isinstance(c, str):
+                normalized_source_cols.append(c)
+
+        params = self.configuration.parameters
+        board_id = params.get("sync_options", {}).get("board_id")
         if not board_id:
-            raise UserException("Select a board first.")
+            raise UserException("Select a board before loading metadata.")
+
+        token = self._get_api_key()
+        client = MondayGraphQLClient(token)
 
         query = """
         query ($board_ids: [ID!]) {
@@ -285,25 +314,27 @@ class Component(ComponentBase):
           }
         }
         """
-        data = self.monday_client.query(query, {"board_ids": [board_id]})
-        monday_cols_raw = data.get("boards", [])[0].get("columns", [])
-
-        monday_cols = [
-            {"id": c["id"], "title": c.get("title") or c["id"]}
-            for c in monday_cols_raw
-            if c.get("id")
+        data = client.query(query, {"board_ids": [board_id]})
+        cols = data.get("boards", [{}])[0].get("columns", [])
+        monday_columns = [
+            {"id": c["id"], "label": f'{c["title"]} ({c["id"]})'}
+            for c in cols
         ]
 
-        field_mappings = [{"source_column": col, "monday_column_id": ""} for col in source_cols]
+        field_mappings = [
+            {"source_column": col, "monday_column_id": ""}
+            for col in normalized_source_cols
+        ]
 
         return {
             "type": "data",
             "data": {
-                "available_source_columns": source_cols,
-                "available_monday_columns": monday_cols,
+                "source_columns": normalized_source_cols,
+                "monday_columns": monday_columns,
                 "field_mappings": field_mappings
             }
         }
+
 
 
 """

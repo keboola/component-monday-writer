@@ -80,7 +80,7 @@
           "type": "string",
           "title": "Unique Source Column",
           "format": "select",
-          "enumSource": "source_columns"
+          "enumSource": "parameters._metadata_.source_columns"
         }
       }
     },
@@ -98,17 +98,24 @@
           "source_column": {
             "type": "string",
             "title": "Source Column",
-            "enumSource": "source_columns",
+            "enumSource": "parameters._metadata_.source_columns",
             "propertyOrder": 1
           },
           "monday_column_id": {
             "type": "string",
             "title": "Monday Column",
             "format": "select",
-            "enumSource": "monday_columns",
+            "enumSource": "parameters._metadata_.monday_columns",
             "propertyOrder": 2
           }
         }
+      }
+    },
+
+    "_metadata_": {
+      "type": "object",
+      "options": {
+        "hidden": true
       }
     }
   }
