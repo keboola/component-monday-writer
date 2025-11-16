@@ -1,6 +1,7 @@
 {
   "type": "object",
   "title": "Row Configuration",
+  "required": [],
   "properties": {
 
     "sync_options": {
@@ -10,60 +11,71 @@
       "properties": {
         "workspace_id": {
           "type": "string",
-          "title": "Workspace",
           "format": "select",
+          "title": "Workspace",
           "options": {
             "async": {
               "label": "LOAD WORKSPACES",
               "action": "list_workspaces"
             }
-          },
-          "enum": []
+          }
         },
         "board_id": {
           "type": "string",
-          "title": "Board",
           "format": "select",
+          "title": "Board",
           "options": {
             "async": {
               "label": "LOAD BOARDS",
               "action": "list_boards",
               "autoload": ["parameters.sync_options.workspace_id"]
             }
-          },
-          "enum": []
+          }
         },
         "group_id": {
           "type": "string",
-          "title": "Group",
           "format": "select",
+          "title": "Group",
           "options": {
             "async": {
               "label": "LOAD GROUPS",
               "action": "list_groups",
               "autoload": ["parameters.sync_options.board_id"]
             }
-          },
-          "enum": []
+          }
         },
-
         "batch_size": {
           "type": "integer",
           "title": "Batch Size",
           "default": 50
-        },
+        }
+      }
+    },
 
-        "load_monday_columns_button": {
-          "type": "button",
-          "format": "sync-action",
-          "title": "Load Monday Columns",
-          "options": {
-            "async": {
-              "label": "LOAD MONDAY COLUMNS",
-              "action": "list_monday_columns",
-              "cache": true
-            }
-          }
+    "load_monday_columns_button": {
+      "type": "button",
+      "format": "sync-action",
+      "title": "Load Monday Columns",
+      "propertyOrder": 150,
+      "options": {
+        "async": {
+          "label": "LOAD MONDAY COLUMNS",
+          "action": "list_monday_columns",
+          "cache": false
+        }
+      }
+    },
+
+    "load_source_columns_button": {
+      "type": "button",
+      "format": "sync-action",
+      "title": "Load Source Columns",
+      "propertyOrder": 160,
+      "options": {
+        "async": {
+          "label": "LOAD SOURCE COLUMNS",
+          "action": "list_source_columns",
+          "cache": false
         }
       }
     },
@@ -77,18 +89,12 @@
           "type": "string",
           "title": "Unique Source Column",
           "format": "select",
-          "options": {
-            "async": {
-              "label": "LOAD SOURCE COLUMNS",
-              "action": "list_source_columns",
-              "cache": true
-            }
-          }
+          "enumSource": "source_columns"
         }
       }
     },
 
-    "generate_mappings_button": {
+    "generate_field_mappings_button": {
       "type": "button",
       "format": "sync-action",
       "title": "Generate Field Mappings",
@@ -112,28 +118,15 @@
         "properties": {
           "source_column": {
             "type": "string",
-            "title": "Source Column",
             "format": "select",
-            "options": {
-              "async": {
-                "label": "LOAD SOURCE COLUMNS",
-                "action": "list_source_columns",
-                "cache": true
-              }
-            }
+            "title": "Source Column",
+            "enumSource": "source_columns"
           },
           "monday_column_id": {
             "type": "string",
-            "title": "Monday Column",
             "format": "select",
-            "options": {
-              "async": {
-                "label": "LOAD MONDAY COLUMNS",
-                "action": "list_monday_columns",
-                "autoload": ["parameters.sync_options.board_id"],
-                "cache": true
-              }
-            }
+            "title": "Monday Column",
+            "enumSource": "monday_columns"
           }
         }
       }
