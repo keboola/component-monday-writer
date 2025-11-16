@@ -1,7 +1,6 @@
 {
   "type": "object",
   "title": "Row Configuration",
-  "required": [],
   "properties": {
     "sync_options": {
       "type": "object",
@@ -15,7 +14,8 @@
           "options": {
             "async": {
               "label": "LOAD WORKSPACES",
-              "action": "list_workspaces"
+              "action": "list_workspaces",
+              "cache": true
             }
           },
           "enum": []
@@ -28,7 +28,8 @@
             "async": {
               "label": "LOAD BOARDS",
               "action": "list_boards",
-              "autoload": ["parameters.sync_options.workspace_id"]
+              "autoload": ["parameters.sync_options.workspace_id"],
+              "cache": true
             }
           },
           "enum": []
@@ -41,7 +42,8 @@
             "async": {
               "label": "LOAD GROUPS",
               "action": "list_groups",
-              "autoload": ["parameters.sync_options.board_id"]
+              "autoload": ["parameters.sync_options.board_id"],
+              "cache": true
             }
           },
           "enum": []
@@ -52,21 +54,34 @@
           "default": 50,
           "minimum": 1,
           "maximum": 500
-        }
-      }
-    },
+        },
 
-    "load_metadata_button": {
-      "type": "button",
-      "format": "sync-action",
-      "title": "Load Columns & Metadata",
-      "description": "Loads source table columns, Monday.com columns, and generates field mappings.",
-      "propertyOrder": 150,
-      "options": {
-        "async": {
-          "label": "LOAD METADATA",
-          "action": "load_all_metadata",
-          "cache": false
+        "load_source_columns_button": {
+          "type": "button",
+          "format": "sync-action",
+          "title": "Load Source Columns",
+          "description": "Fetches source table columns and preloads mapping rows.",
+          "options": {
+            "async": {
+              "label": "LOAD SOURCE COLUMNS",
+              "action": "generate_field_mappings",
+              "cache": false
+            }
+          }
+        },
+
+        "load_monday_columns_button": {
+          "type": "button",
+          "format": "sync-action",
+          "title": "Load Monday Columns",
+          "description": "Fetches Monday.com columns for the selected board.",
+          "options": {
+            "async": {
+              "label": "LOAD MONDAY COLUMNS",
+              "action": "list_monday_columns",
+              "cache": true
+            }
+          }
         }
       }
     },
@@ -80,7 +95,14 @@
           "type": "string",
           "title": "Unique Source Column",
           "format": "select",
-          "enumSource": "parameters._metadata_.source_columns"
+          "options": {
+            "async": {
+              "label": "LOAD SOURCE FIELDS",
+              "action": "list_source_columns",
+              "cache": true
+            }
+          },
+          "enum": []
         }
       }
     },
@@ -92,30 +114,35 @@
       "format": "table",
       "items": {
         "type": "object",
-        "title": "Field Mapping",
-        "required": ["source_column", "monday_column_id"],
         "properties": {
           "source_column": {
             "type": "string",
             "title": "Source Column",
-            "enumSource": "parameters._metadata_.source_columns",
-            "propertyOrder": 1
+            "format": "select",
+            "options": {
+              "async": {
+                "label": "LOAD SOURCE FIELDS",
+                "action": "list_source_columns",
+                "cache": true
+              }
+            },
+            "enum": []
           },
           "monday_column_id": {
             "type": "string",
             "title": "Monday Column",
             "format": "select",
-            "enumSource": "parameters._metadata_.monday_columns",
-            "propertyOrder": 2
+            "options": {
+              "async": {
+                "label": "LOAD MONDAY COLUMNS",
+                "action": "list_monday_columns",
+                "autoload": ["parameters.sync_options.board_id"],
+                "cache": true
+              }
+            },
+            "enum": []
           }
         }
-      }
-    },
-
-    "_metadata_": {
-      "type": "object",
-      "options": {
-        "hidden": true
       }
     }
   }
