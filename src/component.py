@@ -183,7 +183,7 @@ class Component(ComponentBase):
         url = self.environment_variables.url
 
         if not token:
-            raise UserException("Storage API Token is missing. Enable 'Forward Token' in settings.")
+            raise UserException("Storage API Token is missing.")
 
         mappings = self.configuration.tables_input_mapping
         if not mappings or len(mappings) != 1:
@@ -194,7 +194,13 @@ class Component(ComponentBase):
         raw_cols = get_sapi_column_definition(table_id, url, token)
         cols = self._normalize_columns(raw_cols)
 
-        return [SelectElement(c, c) for c in cols]
+        return {
+            "type": "data",
+            "data": {
+                "source_columns": cols
+            }
+        }
+
 
     # -----------------------
     # Generate mapping rows
@@ -221,6 +227,7 @@ class Component(ComponentBase):
         return {
             "type": "data",
             "data": {
+                "source_columns": cols,
                 "field_mappings": field_mappings
             }
         }

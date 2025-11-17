@@ -3,7 +3,6 @@
   "title": "Row Configuration",
   "required": [],
   "properties": {
-
     "sync_options": {
       "type": "object",
       "title": "Sync Options",
@@ -11,71 +10,48 @@
       "properties": {
         "workspace_id": {
           "type": "string",
-          "format": "select",
           "title": "Workspace",
+          "format": "select",
           "options": {
             "async": {
               "label": "LOAD WORKSPACES",
               "action": "list_workspaces"
             }
-          }
+          },
+          "enum": []
         },
         "board_id": {
           "type": "string",
-          "format": "select",
           "title": "Board",
+          "format": "select",
           "options": {
             "async": {
               "label": "LOAD BOARDS",
               "action": "list_boards",
               "autoload": ["parameters.sync_options.workspace_id"]
             }
-          }
+          },
+          "enum": []
         },
         "group_id": {
           "type": "string",
-          "format": "select",
           "title": "Group",
+          "format": "select",
           "options": {
             "async": {
               "label": "LOAD GROUPS",
               "action": "list_groups",
               "autoload": ["parameters.sync_options.board_id"]
             }
-          }
+          },
+          "enum": []
         },
         "batch_size": {
           "type": "integer",
           "title": "Batch Size",
-          "default": 50
-        }
-      }
-    },
-
-    "load_monday_columns_button": {
-      "type": "button",
-      "format": "sync-action",
-      "title": "Load Monday Columns",
-      "propertyOrder": 150,
-      "options": {
-        "async": {
-          "label": "LOAD MONDAY COLUMNS",
-          "action": "list_monday_columns",
-          "cache": false
-        }
-      }
-    },
-
-    "load_source_columns_button": {
-      "type": "button",
-      "format": "sync-action",
-      "title": "Load Source Columns",
-      "propertyOrder": 160,
-      "options": {
-        "async": {
-          "label": "LOAD SOURCE COLUMNS",
-          "action": "list_source_columns",
-          "cache": false
+          "default": 50,
+          "minimum": 1,
+          "maximum": 500
         }
       }
     },
@@ -98,10 +74,11 @@
       "type": "button",
       "format": "sync-action",
       "title": "Generate Field Mappings",
+      "description": "Loads all source fields from the input table and pre-fills the mapping section.",
       "propertyOrder": 250,
       "options": {
         "async": {
-          "label": "GENERATE FIELD MAPPINGS",
+          "label": "LOAD FIELD MAPPINGS",
           "action": "generate_field_mappings",
           "cache": false
         }
@@ -115,18 +92,28 @@
       "format": "table",
       "items": {
         "type": "object",
+        "title": "Field Mapping",
+        "required": ["source_column", "monday_column_id"],
         "properties": {
           "source_column": {
             "type": "string",
-            "format": "select",
             "title": "Source Column",
-            "enumSource": "source_columns"
+            "enumSource": "source_columns",
+            "propertyOrder": 1
           },
           "monday_column_id": {
             "type": "string",
-            "format": "select",
             "title": "Monday Column",
-            "enumSource": "monday_columns"
+            "format": "select",
+            "enum": [],
+            "propertyOrder": 2,
+            "options": {
+              "async": {
+                "label": "LOAD MONDAY COLUMNS",
+                "action": "list_monday_columns",
+                "autoload": ["parameters.sync_options.board_id"]
+              }
+            }
           }
         }
       }
