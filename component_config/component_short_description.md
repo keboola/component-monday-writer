@@ -1,0 +1,1 @@
+Syncs data from Keboola Storage tables to Monday.com boards with automatic upsert, strict validation, and comprehensive error logging for all column types.
