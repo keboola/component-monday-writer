@@ -232,22 +232,25 @@ class MondayWriterEventsLogger:
 
     def __init__(self, data_dir: str):
         self.data_dir = data_dir
+        output_file_name = "monday_writer_events.csv"
         self.tables_output_directory = os.path.join(self.data_dir, "out", "tables")
         os.makedirs(self.tables_output_directory, exist_ok=True)
 
-        self.events_file_path = os.path.join(self.tables_output_directory, "monday_writer_events.csv")
+        self.events_file_path = os.path.join(self.tables_output_directory, output_file_name)
         self.manifest_file_path = self.events_file_path + ".manifest"
 
-        self._ensure_manifest()
+        self._ensure_manifest(output_file_name)
         self._ensure_header()
 
-    def _ensure_manifest(self) -> None:
+    def _ensure_manifest(self, output_file_name: str) -> None:
         """
         Create manifest file for events table with incremental loading configuration.
         """
         manifest = {
+            "name": output_file_name,
             "incremental": True,
             "primary_key": ["event_id"],
+            "destination": "out.c-debug.monday_writer_events"
         }
         try:
             with open(self.manifest_file_path, "w", encoding="utf-8") as file_handle:
