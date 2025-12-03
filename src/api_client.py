@@ -239,15 +239,14 @@ class MondayWriterEventsLogger:
         self.events_file_path = os.path.join(self.tables_output_directory, output_file_name)
         self.manifest_file_path = self.events_file_path + ".manifest"
 
-        self._ensure_manifest(output_file_name)
+        self._ensure_manifest()
         self._ensure_header()
 
-    def _ensure_manifest(self, output_file_name: str) -> None:
+    def _ensure_manifest(self) -> None:
         """
         Create manifest file for events table with incremental loading configuration.
         """
         manifest = {
-            "name": output_file_name,
             "incremental": True,
             "primary_key": ["event_id"],
             "destination": "out.c-debug.monday_writer_events"
